@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:control_pannel/services/backgrounds.dart';
-import 'slide_view.dart'; // import buildBackground
+import 'slide_view.dart'; // import buildBackgroundWithTheme
 
 class SlideEditor extends StatefulWidget {
   final Function(String text, String? background) onSave;
@@ -49,14 +49,11 @@ class _SlideEditorState extends State<SlideEditor> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        const Padding(
-          padding: EdgeInsets.all(8.0),
+        Padding(
+          padding: const EdgeInsets.all(8.0),
           child: Text(
             "Create Slide",
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontSize: 18, fontWeight: FontWeight.bold),
           ),
         ),
 
@@ -89,13 +86,12 @@ class _SlideEditorState extends State<SlideEditor> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text("Solid Colors"),
+                      Text("Solid Colors", style: Theme.of(context).textTheme.bodyMedium),
                       Wrap(
                         spacing: 10,
                         runSpacing: 10,
                         children: bgColors.map((c) {
-                          final hex =
-                              "#${c.value.toRadixString(16).substring(2)}";
+                          final hex = "#${c.value.toRadixString(16).substring(2)}";
 
                           return GestureDetector(
                             onTap: () {
@@ -109,7 +105,7 @@ class _SlideEditorState extends State<SlideEditor> {
                               decoration: BoxDecoration(
                                 color: c,
                                 border: Border.all(
-                                  color: Colors.black26,
+                                  color: Theme.of(context).dividerColor,
                                 ),
                               ),
                             ),
@@ -119,7 +115,7 @@ class _SlideEditorState extends State<SlideEditor> {
 
                       const SizedBox(height: 15),
 
-                      const Text("Images"),
+                      Text("Images", style: Theme.of(context).textTheme.bodyMedium),
                       Wrap(
                         spacing: 10,
                         runSpacing: 10,
@@ -135,7 +131,7 @@ class _SlideEditorState extends State<SlideEditor> {
                               height: 60,
                               clipBehavior: Clip.hardEdge,
                               decoration: BoxDecoration(
-                                border: Border.all(color: Colors.black26),
+                                border: Border.all(color: Theme.of(context).dividerColor),
                               ),
                               child: Image.file(File(img), fit: BoxFit.cover),
                             ),
@@ -157,23 +153,21 @@ class _SlideEditorState extends State<SlideEditor> {
             height: 200,
             margin: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.black26),
+              border: Border.all(color: Theme.of(context).dividerColor),
             ),
             child: Stack(
               children: [
                 if (_selectedBackground != null)
-                  buildBackground(_selectedBackground!)
+                  buildBackgroundWithTheme(context, _selectedBackground!)
                 else
-                  Container(color: Colors.grey.shade300),
+                  Container(color: Theme.of(context).cardColor),
 
                 Center(
                   child: Text(
-                    _slideTextController.text.isEmpty
-                        ? "Preview"
-                        : _slideTextController.text,
+                    _slideTextController.text.isEmpty ? "Preview" : _slideTextController.text,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: Theme.of(context).colorScheme.onPrimary,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
