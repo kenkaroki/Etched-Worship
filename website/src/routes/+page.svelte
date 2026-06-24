@@ -467,10 +467,6 @@
       gap: var(--space-10);
     }
 
-    .what-is__highlights {
-      position: static;
-    }
-
     /* OSS cards stack to one column on small screens */
     .oss__cards {
       grid-template-columns: 1fr;
@@ -482,9 +478,5 @@
     }
   }
 
-  @media (max-width: 600px) {
-    .what-is__highlights {
-      grid-template-columns: 1fr 1fr;
-    }
-  }
+  
 </style>

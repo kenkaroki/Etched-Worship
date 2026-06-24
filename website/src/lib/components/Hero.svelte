@@ -127,15 +127,33 @@
 
       <!-- Simulated app content area -->
       <div class="hero__mockup-body">
-        <!-- Sidebar queue list simulation -->
+       
+        <!-- Main display simulation -->
+        <div class="hero__mockup-display">
+          <p class="hero__mockup-home">
+            Etched Worship
+          </p>
+        </div>
+
+         <!-- Sidebar simulation-->
         <div class="hero__mockup-sidebar">
-          <div class="hero__mockup-queue-label">🎵 Queue</div>
-          {#each ["Amazing Grace", "How Great Is Our God", "Oceans", "10,000 Reasons"] as song, i}
+          <!-- Sidebar Live preview simulation-->
+          <div class="hero_mockup-live-preview">
+            <div class="hero__mockup-display">
+              <p class="hero__mockup-lyric">
+                Ten thousand reasons to...<br>
+                praise....
+              </p>
+            </div>
+          </div>
+          <!-- Sidebar queue list simulation -->
+          <div class="hero__mockup-queue-label">🎵 Songs Queue</div>
+          {#each ["Amazing Grace", "How Great Is Our God","10,000 Reasons", "Oceans"] as song, i}
             <div
               class="hero__mockup-item"
-              class:hero__mockup-item--active={i === 1}
+              class:hero__mockup-item--active={i === 2}
             >
-              {#if i === 1}
+              {#if i === 2}
                 <span style="color:var(--color-primary)">▶</span>
               {:else}
                 <span style="color:var(--color-outline)">♪</span>
@@ -145,14 +163,6 @@
           {/each}
         </div>
 
-        <!-- Main display simulation -->
-        <div class="hero__mockup-display">
-          <p class="hero__mockup-lyric">
-            "How great is our God,<br />
-            sing with me<br />
-            how great is our God"
-          </p>
-        </div>
       </div>
     </div>
   </div>
@@ -396,18 +406,23 @@
   /* App body: sidebar + display */
   .hero__mockup-body {
     display: grid;
-    grid-template-columns: 220px 1fr;
+    grid-template-columns: 550px 5fr;
     min-height: 220px;
   }
 
   /* Queue sidebar */
   .hero__mockup-sidebar {
-    border-right: 1px solid var(--color-outline);
+    border-left: 1px solid var(--color-outline);
     padding: var(--space-4);
     background: var(--color-surface-variant);
     display: flex;
     flex-direction: column;
     gap: var(--space-2);
+    
+  }
+
+  .hero_mockup-live-preview{
+    min-height: 5vh;
   }
 
   .hero__mockup-queue-label {
@@ -447,6 +462,16 @@
   }
 
   .hero__mockup-lyric {
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #ffffff;
+    line-height: 1.8;
+    max-width: none;
+    /* Text glow effect mimicking a projector screen */
+    text-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
+  }
+  .hero__mockup-home {
     text-align: center;
     font-size: 1.1rem;
     font-weight: 500;
