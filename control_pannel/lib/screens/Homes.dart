@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:control_pannel/screens/create_display/create_display.dart';
 import 'package:control_pannel/screens/music/music_page.dart';
 import 'package:control_pannel/services/stack_controller.dart';
-import 'package:control_pannel/themes/app_themes.dart';
+import 'package:control_pannel/themes/app_themes.dart'; // AppColors lives here
 import 'package:flutter/material.dart';
 import 'package:control_pannel/services/queue_manager.dart';
 import 'package:control_pannel/models/queue_models.dart';
@@ -82,13 +82,11 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     final Activeslide = _activeSlide;
     String stack_content_formart = "";
     String content = Activeslide?.content.trim() ?? '';
-    // print("Content:  "+content);
     List content_splits = content.split(':');
     if (content_splits[0].toLowerCase() == 'text') {
       stack_content_formart = "Text:${content.split('text:')[1]}";
     } else if (content_splits[0].toLowerCase() == 'image') {
       stack_content_formart = "Image:${content.split("image:")[1]}";
-      //  change backslashes in windows to foward slashes
       stack_content_formart = stack_content_formart.replaceAll('\\', '/');
     } else {
       stack_content_formart = "";
@@ -123,7 +121,6 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
 
     _refreshControllerAfterFrame();
 
-    // Automatically jump to first item in default queue
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _jumpToSlide("Default Queue", 0);
@@ -228,7 +225,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     final content = slide.content.trim();
 
     if (content.toLowerCase().startsWith('image:')) {
-      final filePath = content.substring(6).trim(); // strip 'image:' prefix
+      final filePath = content.substring(6).trim();
       return Positioned.fill(
         child: Image.file(
           File(filePath),
@@ -241,7 +238,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     }
 
     if (content.toLowerCase().startsWith('text:')) {
-      final content_ = content.substring(5).trim(); // strip 'image:' prefix
+      final content_ = content.substring(5).trim();
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(8.0),
@@ -268,7 +265,6 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
       );
     }
 
-    // defult text
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(8.0),
@@ -299,8 +295,9 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
 
   Widget _buildRightPanelLivePreview(SlideItem? slide, String currentTabName) {
     if (slide == null) {
+      // No active slide — show branded placeholder using primary dark green
       return Container(
-        color: AppThemes().appbar_light,
+        color: AppColors.primaryDark,
         child: const Center(
           child: Icon(Icons.music_note, color: Colors.white30, size: 40),
         ),
@@ -310,11 +307,8 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     return Stack(
       key: ValueKey('mini_${_activeQueueName}_$_activeSlideIndex'),
       children: [
-        // Background layer (color or image)
         Positioned.fill(child: _buildDynamicBackground(slide)),
-        // Content layer — text OR image depending on content prefix
         _buildSlideContentWidget(slide),
-        // LIVE PREVIEW badge
         Positioned(
           bottom: 4,
           right: 4,
@@ -347,19 +341,21 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     return GestureDetector(
       onTap: () => _jumpToSlide(queueName, index),
       child: Container(
-        color: isActive ? AppThemes().appbar_light : Colors.transparent,
+        // Active row gets a soft green tint; inactive rows are transparent
+        color: isActive ? AppColors.primaryExtraLight : Colors.transparent,
         child: ListTile(
           leading: isActive
-              ? Icon(Icons.play_arrow, color: AppThemes().colored_icon_light)
+              ? Icon(Icons.play_arrow, color: AppColors.primary)
               : const Icon(Icons.blur_circular_rounded),
           title: Text(
             item.title,
             style: isActive
-                ?  TextStyle(
+                ? TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: AppThemes().Selected_text_light,
+                    // Dark green text pops on the light-green active background
+                    color: AppColors.primaryDark,
                   )
-                : null,
+                :TextStyle(color: AppColors.tertiary,)
           ),
           trailing: PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
@@ -400,33 +396,22 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
   Widget _buildLeftPanelMainContent(TabController tab, SlideItem? slide) {
     if (_activeLeftPanelMode == 'new') return const AddMedia();
     if (_activeLeftPanelMode == 'music') return const MusicPage();
-    if (_activeLeftPanelMode == 'Bible')
-      return const Center(child: Text("app"));
-    if (_activeLeftPanelMode == 'home') {
-      return Container(
-        width: double.infinity,
-        color: AppThemes().queue_light,
-        child:  Center(
-          child: Text(
-            "Etched Worship",
-            style: TextStyle(
-              fontSize: 48,
-              color: AppThemes().colored_text_light,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-      );
+    if (_activeLeftPanelMode == 'Bible') {
+      return const Center(child: Text("Coming Soon ....."));
     }
+
+    // 'home' mode and the default fallback share the same splash screen
     return Container(
       width: double.infinity,
-      color: AppThemes().queue_light,
+      // Subtle light-green surface keeps the panel on-theme without being loud
+      
       child: Center(
         child: Text(
           "Etched Worship",
           style: TextStyle(
             fontSize: 48,
-            color: AppThemes().colored_text_light,
+            // Primary green makes the brand name stand out
+            color: AppColors.primary,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -440,9 +425,14 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     final tab = _tabController;
     final slide = _activeSlide;
+    // Pull the live colour scheme so selected-tab indicators, dividers,
+    // and any Material widgets automatically adapt to light/dark mode.
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
+        // AppBar colours (green bg, white fg) come from AppBarTheme in
+        // AppThemes.lightTheme — no manual colour props needed here.
         leading: IconButton(
           icon: const Icon(Icons.home),
           onPressed: () {
@@ -461,9 +451,11 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                   flex: 3,
                   child: Column(
                     children: [
+                      // ── Top nav toolbar ──────────────────────
                       Container(
                         height: 60,
-                        color: AppThemes().appbar_light,
+                        // Solid primary green matches the AppBar
+                        color: AppColors.primary,
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Row(
                           children: [
@@ -473,9 +465,13 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                               child: Text(
                                 "New",
                                 style: TextStyle(
+                                  // Extra-light green = selected; white = idle
                                   color: _activeLeftPanelMode == 'new'
-                                      ? AppThemes().Selected_text_light
+                                      ? AppColors.primaryExtraLight
                                       : Colors.white,
+                                  fontWeight: _activeLeftPanelMode == 'new'
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
                                 ),
                               ),
                             ),
@@ -488,8 +484,11 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                                 "Bible",
                                 style: TextStyle(
                                   color: _activeLeftPanelMode == 'Bible'
-                                      ? AppThemes().Selected_text_light
+                                      ? AppColors.primaryExtraLight
                                       : Colors.white,
+                                  fontWeight: _activeLeftPanelMode == 'Bible'
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
                                 ),
                               ),
                             ),
@@ -502,8 +501,11 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                                 "Music",
                                 style: TextStyle(
                                   color: _activeLeftPanelMode == 'music'
-                                      ? AppThemes().Selected_text_light
+                                      ? AppColors.primaryExtraLight
                                       : Colors.white,
+                                  fontWeight: _activeLeftPanelMode == 'music'
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
                                 ),
                               ),
                             ),
@@ -526,11 +528,15 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                   width: 350,
                   child: Container(
                     decoration: BoxDecoration(
-                      color:  AppThemes().queue_light,
-                      border: Border(left: BorderSide(color: Colors.black26)),
+                      // Subtle green-tinted surface for the queue panel
+                      // color: AppColors.lightSurfaceVariant,
+                      border: Border(
+                        left: BorderSide(color: colorScheme.outlineVariant),
+                      ),
                     ),
                     child: Column(
                       children: [
+                        // ── Live preview thumbnail ────────────────
                         Container(
                           height: 200,
                           width: double.infinity,
@@ -542,9 +548,11 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                           ),
                         ),
                         const SizedBox(height: 10),
+                        // ── Queue tabs ────────────────────────────
                         TabBar(
                           controller: tab,
                           isScrollable: true,
+                          // Tab colours come from TabBarTheme in AppThemes
                           tabs: queueNames
                               .map((name) => Tab(text: name))
                               .toList(),

@@ -1,4 +1,4 @@
-import 'package:control_pannel/themes/app_themes.dart';
+import 'package:control_pannel/themes/app_themes.dart'; // AppColors lives here
 import 'package:flutter/material.dart';
 
 class ImageSlideEditor extends StatelessWidget {
@@ -15,22 +15,58 @@ class ImageSlideEditor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Pull the live colour scheme so this widget adapts to light/dark mode
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ElevatedButton(
+        // ── Pick-image button (styled by ElevatedButtonTheme) ──────────
+        ElevatedButton.icon(
           onPressed: onPickImage,
-          child: const Text("Pick Image"),
+          icon: const Icon(Icons.image_outlined),
+          label: const Text("Pick Image"),
         ),
         const SizedBox(height: 10),
-        Text(
-          pickedImagePath ?? "No image selected",
-          style: TextStyle(color: AppThemes().colored_text_light),
+        // ── Selected path indicator ────────────────────────────────────
+        Row(
+          children: [
+            Icon(
+              pickedImagePath != null
+                  ? Icons.check_circle_outline
+                  : Icons.info_outline,
+              size: 16,
+              // Green when a file is chosen; muted grey otherwise
+              color: pickedImagePath != null
+                  ? colorScheme.primary
+                  : AppColors.grey500,
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                pickedImagePath ?? "No image selected",
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  // Primary green highlights the chosen path; grey for the placeholder
+                  color: pickedImagePath != null
+                      ? colorScheme.primary
+                      : AppColors.grey500,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+          ],
         ),
         const Spacer(),
-        ElevatedButton(
-          onPressed: onSend,
-          child: const Text("Add to Defult Queue"),
+        // ── Add button (styled by ElevatedButtonTheme) ─────────────────
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: onSend,
+            icon: const Icon(Icons.add),
+            label: const Text("Add to Default Queue"),
+          ),
         ),
       ],
     );
