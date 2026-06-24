@@ -3,6 +3,7 @@
   Site-wide footer with brand, nav columns, and legal info.
   ============================================================ -->
 <script lang="ts">
+  import { base } from '$app/paths';
   // Current year for the copyright line — computed at runtime
   const year = new Date().getFullYear();
 
@@ -11,9 +12,9 @@
     {
       title: 'Product',
       links: [
-        { href: '/#features',     label: 'Features'    },
-        { href: '/#what-is',      label: 'About'       },
-        { href: '/download',      label: 'Download'    },
+        { href: `${base}/#features`,     label: 'Features'    },
+        { href: `${base}/#what-is`,      label: 'About'       },
+        { href: `${base}/download`,      label: 'Download'    },
       ],
     },
     {
@@ -40,7 +41,7 @@
 
     <!-- Brand column -->
     <div class="footer__brand">
-      <a href="/" class="footer__logo" aria-label="Etched Worship home">
+      <a href="{base}/" class="footer__logo" aria-label="Etched Worship home">
         <span class="footer__logo-icon" aria-hidden="true">✝</span>
         <span class="footer__logo-text">Etched Worship</span>
       </a>

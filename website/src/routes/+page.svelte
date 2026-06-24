@@ -8,6 +8,7 @@
     5. Final CTA banner
   ============================================================ -->
 <script lang="ts">
+  import { base } from '$app/paths';
   import Hero from '$lib/components/Hero.svelte';
   import FeatureCard from '$lib/components/FeatureCard.svelte';
 
@@ -131,7 +132,7 @@
 
         <!-- Inline CTA -->
         <div class="what-is__actions">
-          <a href="/download" class="btn btn-primary" id="about-download-btn">Get Started Free</a>
+          <a href="{base}/download" class="btn btn-primary" id="about-download-btn">Get Started Free</a>
           <a
             href="https://github.com/kenkaroki/Etched-Worship"
             class="btn btn-outline"
@@ -271,7 +272,7 @@
       <p>Download Etched Worship for free and get started in minutes.</p>
 
       <div class="cta-banner__actions">
-        <a href="/download" class="btn btn-primary" id="cta-download-btn">
+        <a href= "{base}/download" class="btn btn-primary" id="cta-download-btn">
           Download Free
         </a>
         <a

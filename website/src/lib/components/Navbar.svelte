@@ -6,6 +6,8 @@
 <script lang="ts">
   import { page } from '$app/stores';
   import { onMount } from 'svelte';
+  import { base } from '$app/paths';
+
 
   // Track scroll position to apply backdrop blur when user scrolls down
   // $state() makes the variable reactive in Svelte 5 runes mode
@@ -26,9 +28,9 @@
   // Navigation links definition — easy to extend
   const navLinks = [
     { href: '/',         label: 'Home'     },
-    { href: '/#features',label: 'Features' },
-    { href: '/#open-source', label: 'Open Source' },
-    { href: '/download', label: 'Download' },
+    { href: `${base}/#features`,label: 'Features' },
+    { href: `${base}/#open-source`, label: 'Open Source' },
+    { href: `${base}/download`, label: 'Download' },
   ] as const;
 
   // Close mobile menu when route changes.
