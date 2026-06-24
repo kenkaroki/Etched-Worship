@@ -3,10 +3,6 @@
 #
 #  REUSABLE WORKFLOW — GitHub Pages publisher
 #  ─────────────────────────────────────────
-#  This workflow is NOT triggered directly by a git event.
-#  It is designed to be called by other workflows via
-#  `workflow_call`. The calling workflow (deploy.yml) decides
-#  when and on which branch this runs.
 #
 #  What it does:
 #    1. Check out the repo on the Website branch
@@ -22,10 +18,16 @@
 name: Publish to GitHub Pages
 
 on:
-  # This workflow can only be triggered by another workflow
-  # (specifically deploy.yml). It cannot be triggered manually
-  # or by a push/PR event on its own.
-  workflow_call:
+  push:
+    # Only run when pushing to the main branch
+    branches:
+      - main
+
+    # Only run when files inside the website/ directory have changed.
+    # This prevents unnecessary deployments when you push commits
+    # that only touch the Flutter app, canvas code, etc.
+    paths:
+      - 'website/**'
 
 jobs:
   build-and-deploy:
