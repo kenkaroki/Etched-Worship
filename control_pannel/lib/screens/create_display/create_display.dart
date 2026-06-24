@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:control_pannel/models/queue_models.dart';
 import 'package:control_pannel/services/queue_manager.dart';
-import 'package:control_pannel/themes/app_themes.dart';
+import 'package:control_pannel/themes/app_themes.dart'; // AppColors lives here
 import 'package:flutter/material.dart';
 import 'package:control_pannel/services/create_display_service.dart';
 import 'package:control_pannel/services/backgrounds.dart';
@@ -24,8 +24,8 @@ class _AddMediaState extends State<AddMedia> {
   final DisplayService _displayService = DisplayService();
 
   // ================= STEP CONTROL =================
-  // null = show only type selector
-  // "text" = text editor mode
+  // null  = type selector
+  // "text"  = text editor mode
   // "image" = image editor mode
   String? slideType;
 
@@ -41,8 +41,12 @@ class _AddMediaState extends State<AddMedia> {
   final BackgroundsService _backgroundsService = BackgroundsService();
   List<List<dynamic>> solidBackgrounds = [];
   List<String> imageBackgrounds = [];
-
+  // used for saving image slides without a name
   int imgcount = 0;
+
+  bool save_to_diffrent_queue = false;
+  String queue_to_save_to = "";
+  String Slide_name = "";
 
   @override
   void initState() {
@@ -84,35 +88,24 @@ class _AddMediaState extends State<AddMedia> {
 
   // ================= SEND =================
   Future<void> add_to_que() async {
-    print("TYPE: $slideType");
-    print("TEXT: ${textController.text}");
-    print("IMAGE: $pickedImagePath");
-    print("BACKGROUND: $selectedBackground");
+    await showDialog(
+      context: context,
+      builder: (_) => SaveDialog(
+        slideType: slideType!,
+        text: textController.text,
+        imagePath: pickedImagePath,
+        background: selectedBackground,
+        imageCount: imgcount,
+        onImageSaved: () {
+          setState(() {
+            imgcount++;
+          });
+        },
+      ),
+    );
 
-    if (slideType == 'text') {
-      QueueManager.addSlide(
-        "Default Queue",
-        SlideItem(
-          title: textController.text.length > 6
-              ? '${textController.text.substring(0, 6)}...'
-              : textController.text,
-          content: 'text:${textController.text}',
-          background: '$selectedBackground',
-        ),
-      );
-    }
-    if (slideType == 'image') {
-      QueueManager.addSlide(
-        "Default Queue",
-        SlideItem(
-          title: "Image${imgcount +1 }",
-          content: 'image:${pickedImagePath}',
-          background: '$selectedBackground',
-        ),
-      );
-      setState(() {
-        imgcount += 1;
-      });
+    if (mounted) {
+      Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
     }
   }
 
@@ -134,14 +127,14 @@ class _AddMediaState extends State<AddMedia> {
           ),
         );
       } else {
-        background = Container(color: AppThemes().containers_cards_light);
+        // Fallback: subtle green-tinted surface from the theme palette
+        background = Container(color: AppColors.lightSurfaceVariant);
       }
     } else {
-      background = Container(color: AppThemes().containers_cards_light);
+      background = Container(color: AppColors.lightSurfaceVariant);
     }
 
     Widget content;
-
     if (slideType == "image" && pickedImagePath != null) {
       content = Image.file(File(pickedImagePath!), fit: BoxFit.contain);
     } else {
@@ -166,13 +159,16 @@ class _AddMediaState extends State<AddMedia> {
       width: double.infinity,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.black12),
+        border: Border.all(color: AppColors.lightOutline),
       ),
-      child: Stack(
-        children: [
-          background,
-          Center(child: content),
-        ],
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Stack(
+          children: [
+            Positioned.fill(child: background),
+            Center(child: content),
+          ],
+        ),
       ),
     );
   }
@@ -183,49 +179,79 @@ class _AddMediaState extends State<AddMedia> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // TEXT CARD
+          // ── TEXT card ─────────────────────────────────
           GestureDetector(
-            onTap: () {
-              setState(() {
-                slideType = "text";
-              });
-            },
+            onTap: () => setState(() => slideType = "text"),
             child: Container(
               width: 180,
               height: 140,
               margin: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.blue.shade300,
+                // Primary green for the text-slide option
+                color: AppColors.primary,
                 borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withOpacity(0.35),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: const Center(
-                child: Text(
-                  "TEXT SLIDE",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.text_fields, color: Colors.white, size: 32),
+                    SizedBox(height: 8),
+                    Text(
+                      "TEXT SLIDE",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
 
-          // IMAGE CARD
+          // ── IMAGE card ────────────────────────────────
           GestureDetector(
-            onTap: () {
-              setState(() {
-                slideType = "image";
-              });
-            },
+            onTap: () => setState(() => slideType = "image"),
             child: Container(
               width: 180,
               height: 140,
               margin: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.green.shade300,
+                // Slightly darker green distinguishes the two cards
+                color: AppColors.primaryDark,
                 borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primaryDark.withOpacity(0.35),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: const Center(
-                child: Text(
-                  "IMAGE SLIDE",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.image, color: Colors.white, size: 32),
+                    SizedBox(height: 8),
+                    Text(
+                      "IMAGE SLIDE",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -255,18 +281,19 @@ class _AddMediaState extends State<AddMedia> {
                     "#${(bg[1] as Color).value.toRadixString(16).padLeft(8, '0').substring(2)}";
                 final isSelected = selectedBackground == "color:$hex";
                 return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      selectedBackground = "color:$hex";
-                    });
-                  },
+                  onTap: () =>
+                      setState(() => selectedBackground = "color:$hex"),
                   child: Container(
                     width: 50,
                     height: 50,
                     decoration: BoxDecoration(
                       color: bg[1],
+                      borderRadius: BorderRadius.circular(6),
                       border: Border.all(
-                        color: isSelected ? Colors.blue : Colors.black12,
+                        // Primary green selection ring; neutral outline otherwise
+                        color: isSelected
+                            ? AppColors.primary
+                            : AppColors.lightOutline,
                         width: isSelected ? 3 : 1,
                       ),
                     ),
@@ -297,46 +324,49 @@ class _AddMediaState extends State<AddMedia> {
               children: imageBackgrounds.map((path) {
                 final isSelected = selectedBackground == "image:$path";
                 return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      selectedBackground = "image:$path";
-                    });
-                  },
+                  onTap: () =>
+                      setState(() => selectedBackground = "image:$path"),
                   child: Container(
                     width: 80,
                     height: 55,
                     decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(6),
                       border: Border.all(
-                        color: isSelected ? Colors.blue : Colors.black12,
+                        color: isSelected
+                            ? AppColors.primary
+                            : AppColors.lightOutline,
                         width: isSelected ? 3 : 1,
                       ),
                     ),
-                    child: Stack(
-                      children: [
-                        Positioned.fill(
-                          child: Image.file(
-                            File(path),
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) =>
-                                Container(color: Colors.grey),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: Stack(
+                        children: [
+                          Positioned.fill(
+                            child: Image.file(
+                              File(path),
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Container(color: AppColors.grey300),
+                            ),
                           ),
-                        ),
-                        Center(
-                          child: Container(
-                            padding: const EdgeInsets.all(2),
-                            color: Colors.black54,
-                            child: Text(
-                              path.split(RegExp(r'[/\\]')).last,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 8,
+                          Center(
+                            child: Container(
+                              padding: const EdgeInsets.all(2),
+                              color: Colors.black54,
+                              child: Text(
+                                path.split(RegExp(r'[/\\]')).last,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 8,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 );
@@ -353,6 +383,7 @@ class _AddMediaState extends State<AddMedia> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        // AppBar styling (green bg, white fg) is handled by AppBarTheme
         title: const Text("Add Media"),
         centerTitle: true,
         leading: slideType != null
@@ -368,7 +399,7 @@ class _AddMediaState extends State<AddMedia> {
                   Expanded(
                     child: Row(
                       children: [
-                        // LEFT
+                        // ── LEFT: editor ─────────────────────────
                         Expanded(
                           flex: 2,
                           child: slideType == "text"
@@ -384,7 +415,7 @@ class _AddMediaState extends State<AddMedia> {
                                 ),
                         ),
                         const SizedBox(width: 10),
-                        // RIGHT
+                        // ── RIGHT: background picker ──────────────
                         Expanded(
                           flex: 2,
                           child: Column(
@@ -398,7 +429,7 @@ class _AddMediaState extends State<AddMedia> {
                                 ),
                               ),
                               const SizedBox(height: 10),
-                              buildBackgroundSelector(),
+                              Expanded(child: buildBackgroundSelector()),
                             ],
                           ),
                         ),
@@ -406,11 +437,135 @@ class _AddMediaState extends State<AddMedia> {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  // PREVIEW
+                  // ── PREVIEW ──────────────────────────────────────
                   buildPreview(),
                 ],
               ),
             ),
+    );
+  }
+}
+
+class SaveDialog extends StatefulWidget {
+  final String slideType;
+  final String text;
+  final String? imagePath;
+  final String? background;
+  final int imageCount;
+  final VoidCallback onImageSaved;
+
+  const SaveDialog({
+    super.key,
+    required this.slideType,
+    required this.text,
+    required this.imagePath,
+    required this.background,
+    required this.imageCount,
+    required this.onImageSaved,
+  });
+
+  @override
+  State<SaveDialog> createState() => _SaveDialogState();
+}
+
+class _SaveDialogState extends State<SaveDialog> {
+  late TextEditingController titleController;
+
+  List<String> get queueNames => QueueManager.queues.keys.toList();
+
+  String? selectedQueue;
+
+  @override
+  void initState() {
+    super.initState();
+
+    selectedQueue = queueNames.isNotEmpty ? queueNames[0] : null;
+
+    String defaultTitle;
+
+    if (widget.slideType == "text") {
+      defaultTitle = widget.text.length > 7
+          ? "${widget.text.substring(0, 7)}..."
+          : widget.text;
+    } else {
+      defaultTitle = "Image${widget.imageCount + 1}";
+    }
+
+    titleController = TextEditingController(text: defaultTitle);
+  }
+
+  void save() {
+    if (selectedQueue == null) return;
+
+    if (widget.slideType == "text") {
+      QueueManager.addSlide(
+        selectedQueue!,
+        SlideItem(
+          title: titleController.text,
+          content: "text:${widget.text}",
+          background: widget.background ?? "",
+        ),
+      );
+    } else {
+      QueueManager.addSlide(
+        selectedQueue!,
+        SlideItem(
+          title: titleController.text,
+          content: "image:${widget.imagePath}",
+          background: widget.background ?? "",
+        ),
+      );
+
+      widget.onImageSaved();
+    }
+
+    Navigator.pop(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text("Save Slide"),
+      content: SizedBox(
+        width: 350,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: titleController,
+              decoration: const InputDecoration(
+                labelText: "Slide Title",
+                border: OutlineInputBorder(),
+              ),
+            ),
+
+            const SizedBox(height: 15),
+
+            DropdownButtonFormField<String>(
+              value: selectedQueue,
+              decoration: const InputDecoration(
+                labelText: "Queue",
+                border: OutlineInputBorder(),
+              ),
+              items: queueNames.map((queue) {
+                return DropdownMenuItem(value: queue, child: Text(queue));
+              }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  selectedQueue = value;
+                });
+              },
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text("Cancel"),
+        ),
+        ElevatedButton(onPressed: save, child: const Text("Save")),
+      ],
     );
   }
 }
