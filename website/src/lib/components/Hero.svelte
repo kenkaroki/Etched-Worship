@@ -5,6 +5,7 @@
   ============================================================ -->
 <script lang="ts">
   import { onMount } from "svelte";
+  import { base } from '$app/paths';
 
   // Svelte 5: $state() makes this reactive.
   // Svelte 4: drop $state() and just use `let visible = false;`
@@ -57,7 +58,7 @@
     <!-- Call-to-action buttons -->
     <div class="hero__actions">
       <a
-        href="/download"
+        href="{base}/download"
         class="btn btn-primary hero__btn"
         id="hero-download-btn"
       >

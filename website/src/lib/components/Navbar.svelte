@@ -27,7 +27,7 @@
 
   // Navigation links definition — easy to extend
   const navLinks = [
-    { href: '/',         label: 'Home'     },
+    { href: `${base}/`,         label: 'Home'     },
     { href: `${base}/#features`,label: 'Features' },
     { href: `${base}/#open-source`, label: 'Open Source' },
     { href: `${base}/download`, label: 'Download' },
@@ -48,7 +48,7 @@
 >
   <div class="container navbar__inner">
     <!-- Brand logo / wordmark -->
-    <a href="/" class="navbar__brand" aria-label="Etched Worship — home">
+    <a href="{base}/" class="navbar__brand" aria-label="Etched Worship — home">
       <!-- Cross / worship icon -->
       <span class="navbar__icon" aria-hidden="true">✝</span>
       <span class="navbar__wordmark">
@@ -106,7 +106,7 @@
         </li>
       {/each}
       <li>
-        <a href="/download" class="btn btn-primary" style="width:100%;justify-content:center;">
+        <a href="{base}/download" class="btn btn-primary" style="width:100%;justify-content:center;">
           Download
         </a>
       </li>
