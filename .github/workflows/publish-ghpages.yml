@@ -1,0 +1,89 @@
+# ============================================================
+#  .github/workflows/publish-ghpages.yml
+#
+#  REUSABLE WORKFLOW — GitHub Pages publisher
+#  ─────────────────────────────────────────
+#  This workflow is NOT triggered directly by a git event.
+#  It is designed to be called by other workflows via
+#  `workflow_call`. The calling workflow (deploy.yml) decides
+#  when and on which branch this runs.
+#
+#  What it does:
+#    1. Check out the repo on the Website branch
+#    2. Set up Node.js
+#    3. Install dependencies (website/node_modules)
+#    4. Build the SvelteKit static site into website/build/
+#    5. Push the build/ folder to the `gh-pages` branch using
+#       the `peaceiris/actions-gh-pages` action
+#
+#  The `gh-pages` branch is what GitHub Pages serves.
+# ============================================================
+
+name: Publish to GitHub Pages
+
+on:
+  # This workflow can only be triggered by another workflow
+  # (specifically deploy.yml). It cannot be triggered manually
+  # or by a push/PR event on its own.
+  workflow_call:
+
+jobs:
+  build-and-deploy:
+    name: Build static site & push to gh-pages
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── Step 1: Check out the full repo ─────────────────────
+      # We need fetch-depth: 0 so peaceiris/actions-gh-pages
+      # can read the full git history when pushing to gh-pages.
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ── Step 2: Set up Node.js ───────────────────────────────
+      # Pin to Node 20 LTS for stability. The `cache` option
+      # automatically caches node_modules between workflow runs
+      # using the package-lock.json as the cache key.
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: website/package-lock.json
+
+      # ── Step 3: Install dependencies ────────────────────────
+      # `--frozen-lockfile` (npm ci) ensures a reproducible
+      # install — it fails if package-lock.json is out of sync.
+      - name: Install dependencies
+        working-directory: website
+        run: npm ci
+
+      # ── Step 4: Build the static site ───────────────────────
+      # `npm run build` runs `vite build` which invokes
+      # adapter-static and outputs pre-rendered HTML + assets
+      # into the website/build/ directory.
+      - name: Build static site
+        working-directory: website
+        run: npm run build
+
+      # ── Step 5: Deploy build/ to gh-pages branch ────────────
+      # peaceiris/actions-gh-pages pushes the contents of
+      # `publish_dir` to the `gh-pages` branch (creating it if
+      # it doesn't exist). GitHub Pages is then configured to
+      # serve from that branch.
+      #
+      # GITHUB_TOKEN is automatically available in all workflows;
+      # no extra secrets need to be configured.
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          # The folder that contains the built static files
+          publish_dir: website/build
+          # The branch GitHub Pages is configured to serve from
+          publish_branch: gh-pages
+          # Commit message shown in the gh-pages branch history
+          commit_message: 'deploy: ${{ github.sha }} → gh-pages'
+          # Keep the CNAME file if you have a custom domain
+          keep_files: false
