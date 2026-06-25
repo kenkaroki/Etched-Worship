@@ -1,4 +1,5 @@
 name: Build Flutter App
+
 on:
   workflow_call:
     inputs:
@@ -21,6 +22,7 @@ jobs:
     name: Windows
     runs-on: windows-latest
     continue-on-error: true
+
     defaults:
       run:
         working-directory: ${{ inputs.app-folder }}
@@ -53,6 +55,7 @@ jobs:
     name: Linux
     runs-on: ubuntu-latest
     continue-on-error: true
+
     defaults:
       run:
         working-directory: ${{ inputs.app-folder }}
@@ -83,7 +86,6 @@ jobs:
       - name: Package
         run: |
           cd build/linux/x64/release
-          # Fixed: 4 levels up to return to the app-folder root
           zip -r ../../../../${{ inputs.app-name }}.zip bundle
 
       - uses: actions/upload-artifact@v4
@@ -95,6 +97,7 @@ jobs:
     name: macOS
     runs-on: macos-latest
     continue-on-error: true
+
     defaults:
       run:
         working-directory: ${{ inputs.app-folder }}
@@ -111,11 +114,15 @@ jobs:
 
       - run: flutter build macos --release
 
+      - name: Remove dSYM Files
+        run: |
+          find build/macos -name "*.dSYM" -type d -exec rm -rf {} +
+
       - name: Package
         run: |
-          cd build/macos/Build/Products
-          # Fixed: 4 levels up to return to the app-folder root
-          zip -r ../../../../${{ inputs.app-name }}.zip Release
+          cd build/macos/Build/Products/Release
+          zip -r ../../../../../${{ inputs.app-name }}.zip \
+            ${{ inputs.app-name }}.app
 
       - uses: actions/upload-artifact@v4
         with:
@@ -126,6 +133,7 @@ jobs:
     name: Publish Builds
     runs-on: ubuntu-latest
     if: always()
+
     needs:
       - build-windows
       - build-linux
@@ -146,15 +154,17 @@ jobs:
         id: check
         run: |
           SUCCESS=0
+
           [ -f downloaded/windows-build/${{ inputs.app-name }}.zip ] && SUCCESS=1
           [ -f downloaded/linux-build/${{ inputs.app-name }}.zip ] && SUCCESS=1
           [ -f downloaded/macos-build/${{ inputs.app-name }}.zip ] && SUCCESS=1
+
           echo "success=$SUCCESS" >> $GITHUB_OUTPUT
 
       - name: Fail If Everything Failed
         if: steps.check.outputs.success == '0'
         run: |
-          echo "All platforms failed."
+          echo "All builds failed."
           exit 1
 
       - name: Configure Git
@@ -165,80 +175,104 @@ jobs:
       - name: Checkout Or Create Builds Branch
         run: |
           git fetch origin builds || true
+
           if git ls-remote --heads origin builds | grep builds; then
             git checkout -B builds origin/builds
           else
             git checkout --orphan builds
+
             find . -mindepth 1 -maxdepth 1 ! -name ".git" -exec rm -rf {} +
-            mkdir -p latest/windows latest/linux latest/macos history
-            touch .gitkeep
+
+            mkdir -p latest/windows
+            mkdir -p latest/linux
+            mkdir -p latest/macos
+            mkdir -p history
+
             git add .
-            git commit -m "Initialize builds branch"
+            git commit --allow-empty -m "Initialize builds branch"
             git push origin builds
-            git checkout builds
+          fi
+
+      # Runs AFTER the branch checkout so the local repo config (.git/config)
+      # gets the LFS filter, not just the global ~/.gitconfig. Without --local
+      # the clean filter that converts files to LFS pointers on git-add can
+      # silently fall back to committing raw binaries on some runners.
+      - name: Setup Git LFS
+        run: |
+          git lfs install
+          git lfs install --local
+          git lfs track "*.zip"
+
+          if [ ! -f .gitattributes ]; then
+            echo "*.zip filter=lfs diff=lfs merge=lfs -text" > .gitattributes
           fi
 
       - name: Create History Snapshot
         run: |
           TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+
           mkdir -p history
+
           if [ -d latest ] && [ "$(find latest -type f 2>/dev/null)" ]; then
-            cp -R latest "history/$TIMESTAMP"
+            cp -R latest history/$TIMESTAMP
           fi
 
       - name: Update Windows Build
         run: |
           mkdir -p latest/windows
+
           if [ -f downloaded/windows-build/${{ inputs.app-name }}.zip ]; then
-            cp downloaded/windows-build/${{ inputs.app-name }}.zip latest/windows/${{ inputs.app-name }}.zip
-            echo "::notice::Windows build updated"
-          else
-            echo "::warning::Windows build failed"
+            cp downloaded/windows-build/${{ inputs.app-name }}.zip \
+               latest/windows/${{ inputs.app-name }}.zip
           fi
 
       - name: Update Linux Build
         run: |
           mkdir -p latest/linux
+
           if [ -f downloaded/linux-build/${{ inputs.app-name }}.zip ]; then
-            cp downloaded/linux-build/${{ inputs.app-name }}.zip latest/linux/${{ inputs.app-name }}.zip
-            echo "::notice::Linux build updated"
-          else
-            echo "::warning::Linux build failed"
+            cp downloaded/linux-build/${{ inputs.app-name }}.zip \
+               latest/linux/${{ inputs.app-name }}.zip
           fi
 
       - name: Update macOS Build
         run: |
           mkdir -p latest/macos
+
           if [ -f downloaded/macos-build/${{ inputs.app-name }}.zip ]; then
-            cp downloaded/macos-build/${{ inputs.app-name }}.zip latest/macos/${{ inputs.app-name }}.zip
-            echo "::notice::macOS build updated"
-          else
-            echo "::warning::macOS build failed"
+            cp downloaded/macos-build/${{ inputs.app-name }}.zip \
+               latest/macos/${{ inputs.app-name }}.zip
           fi
 
       - name: Keep Latest 10 Histories
         run: |
           mkdir -p history
+
           cd history
+
           COUNT=$(ls -1dt */ 2>/dev/null | wc -l)
+
           if [ "$COUNT" -gt 10 ]; then
             ls -1dt */ | tail -n +11 | xargs rm -rf
           fi
 
-      - name: Build Summary
-        run: |
-          echo "# Build Summary" >> $GITHUB_STEP_SUMMARY
-          [ -f downloaded/windows-build/${{ inputs.app-name }}.zip ] && echo "✅ Windows" >> $GITHUB_STEP_SUMMARY || echo "⚠ Windows Failed" >> $GITHUB_STEP_SUMMARY
-          [ -f downloaded/linux-build/${{ inputs.app-name }}.zip ] && echo "✅ Linux" >> $GITHUB_STEP_SUMMARY || echo "⚠ Linux Failed" >> $GITHUB_STEP_SUMMARY
-          [ -f downloaded/macos-build/${{ inputs.app-name }}.zip ] && echo "✅ macOS" >> $GITHUB_STEP_SUMMARY || echo "⚠ macOS Failed" >> $GITHUB_STEP_SUMMARY
-
       - name: Commit And Push
         run: |
-          git add latest history
+          git add .gitattributes
+          git add latest
+          git add history
+
           if git diff --cached --quiet; then
             echo "No changes"
             exit 0
           fi
+
           TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+
           git commit -m "${{ inputs.app-name }} build $TIMESTAMP"
+
+          # Push LFS objects first, then the commit that references them.
+          # The pre-push hook does this automatically when LFS is healthy,
+          # but being explicit here guards against hook installation edge cases.
+          git lfs push origin builds
           git push origin builds
