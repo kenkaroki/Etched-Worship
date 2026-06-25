@@ -1,0 +1,140 @@
+name: Semi-Annual Platform Releases
+
+on:
+  schedule:
+    # January 1st
+    - cron: "0 0 1 1 *"
+
+    # July 1st
+    - cron: "0 0 1 7 *"
+
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout builds branch
+        uses: actions/checkout@v4
+        with:
+          ref: builds
+          fetch-depth: 0
+
+      - name: Install GitHub CLI
+        run: |
+          gh --version
+
+      - name: Determine Next Version
+        id: version
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          TAGS=$(gh release list --limit 100 --json tagName -q '.[].tagName' || true)
+
+          LAST_VERSION=""
+
+          for tag in $TAGS; do
+            if [[ "$tag" =~ ^windows-([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+              VERSION="${BASH_REMATCH[1]}"
+
+              if [ -z "$LAST_VERSION" ]; then
+                LAST_VERSION="$VERSION"
+              else
+                HIGHEST=$(printf "%s\n%s\n" "$LAST_VERSION" "$VERSION" | sort -V | tail -n1)
+                LAST_VERSION="$HIGHEST"
+              fi
+            fi
+          done
+
+          if [ -z "$LAST_VERSION" ]; then
+            NEXT_VERSION="1.0.0"
+          else
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$LAST_VERSION"
+
+            PATCH=$((PATCH + 1))
+
+            if [ "$PATCH" -gt 9 ]; then
+              PATCH=0
+              MINOR=$((MINOR + 1))
+            fi
+
+            if [ "$MINOR" -gt 9 ]; then
+              MINOR=0
+              MAJOR=$((MAJOR + 1))
+            fi
+
+            NEXT_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          fi
+
+          echo "version=$NEXT_VERSION" >> "$GITHUB_OUTPUT"
+
+          echo "Next Version: $NEXT_VERSION"
+
+      - name: Create Release Directory
+        run: mkdir -p release
+
+      - name: Package Windows
+        run: |
+          if [ -d latest/windows ]; then
+            cd latest
+            zip -r "../release/windows-${{ steps.version.outputs.version }}.zip" windows
+          fi
+
+      - name: Package Linux
+        run: |
+          if [ -d latest/linux ]; then
+            cd latest
+            zip -r "../release/linux-${{ steps.version.outputs.version }}.zip" linux
+          fi
+
+      - name: Package Mac
+        run: |
+          if [ -d latest/mac ]; then
+            cd latest
+            zip -r "../release/mac-${{ steps.version.outputs.version }}.zip" mac
+          fi
+
+      - name: Create Windows Release
+        if: hashFiles('release/windows-*.zip') != ''
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create \
+            "windows-${{ steps.version.outputs.version }}" \
+            "release/windows-${{ steps.version.outputs.version }}.zip" \
+            --title "windows-${{ steps.version.outputs.version }}" \
+            --notes "Automated Windows release"
+
+      - name: Create Linux Release
+        if: hashFiles('release/linux-*.zip') != ''
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create \
+            "linux-${{ steps.version.outputs.version }}" \
+            "release/linux-${{ steps.version.outputs.version }}.zip" \
+            --title "linux-${{ steps.version.outputs.version }}" \
+            --notes "Automated Linux release"
+
+      - name: Create Mac Release
+        if: hashFiles('release/mac-*.zip') != ''
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create \
+            "mac-${{ steps.version.outputs.version }}" \
+            "release/mac-${{ steps.version.outputs.version }}.zip" \
+            --title "mac-${{ steps.version.outputs.version }}" \
+            --notes "Automated macOS release"
+
+      - name: Summary
+        run: |
+          echo "Published:"
+          echo "windows-${{ steps.version.outputs.version }}"
+          echo "linux-${{ steps.version.outputs.version }}"
+          echo "mac-${{ steps.version.outputs.version }}"

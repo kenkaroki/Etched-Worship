@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'control_panel/**'
+
   workflow_dispatch:
 
 permissions:
