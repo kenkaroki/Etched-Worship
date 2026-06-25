@@ -80,24 +80,24 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
       _activeSlideIndex = index;
     });
     final Activeslide = _activeSlide;
-    String stack_content_formart = "";
+    String stackContentFormart = "";
     String content = Activeslide?.content.trim() ?? '';
-    List content_splits = content.split(':');
-    if (content_splits[0].toLowerCase() == 'text') {
-      stack_content_formart = "Text:${content.split('text:')[1]}";
-    } else if (content_splits[0].toLowerCase() == 'image') {
-      stack_content_formart = "Image:${content.split("image:")[1]}";
-      stack_content_formart = stack_content_formart.replaceAll('\\', '/');
+    List contentSplits = content.split(':');
+    if (contentSplits[0].toLowerCase() == 'text') {
+      stackContentFormart = "Text:${content.split('text:')[1]}";
+    } else if (contentSplits[0].toLowerCase() == 'image') {
+      stackContentFormart = "Image:${content.split("image:")[1]}";
+      stackContentFormart = stackContentFormart.replaceAll('\\', '/');
     } else {
-      stack_content_formart = "";
+      stackContentFormart = "";
     }
 
-    print(stack_content_formart);
+    print(stackContentFormart);
 
     String Background = Activeslide?.background.trim() ?? '';
-    String Stack_formart = "$stack_content_formart,Background:$Background";
+    String stackFormart = "$stackContentFormart,Background:$Background";
 
-    write_to_stack(Stack_formart);
+    write_to_stack(stackFormart);
   }
 
   // ================= INIT & DISPOSE =================
@@ -401,7 +401,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     }
 
     // 'home' mode and the default fallback share the same splash screen
-    return Container(
+    return SizedBox(
       width: double.infinity,
       // Subtle light-green surface keeps the panel on-theme without being loud
       
