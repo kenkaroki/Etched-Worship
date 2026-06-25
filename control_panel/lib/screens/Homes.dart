@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:control_pannel/screens/Bible/bible.dart';
 import 'package:control_pannel/screens/create_display/create_display.dart';
 import 'package:control_pannel/screens/music/music_page.dart';
 import 'package:control_pannel/services/stack_controller.dart';
@@ -355,7 +356,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                     // Dark green text pops on the light-green active background
                     color: AppColors.primaryDark,
                   )
-                :TextStyle(color: AppColors.tertiary,)
+                : TextStyle(color: AppColors.tertiary),
           ),
           trailing: PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
@@ -396,15 +397,13 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
   Widget _buildLeftPanelMainContent(TabController tab, SlideItem? slide) {
     if (_activeLeftPanelMode == 'new') return const AddMedia();
     if (_activeLeftPanelMode == 'music') return const MusicPage();
-    if (_activeLeftPanelMode == 'Bible') {
-      return const Center(child: Text("Coming Soon ....."));
-    }
+    if (_activeLeftPanelMode == 'Bible') return const BibleReaderPage();
 
     // 'home' mode and the default fallback share the same splash screen
     return SizedBox(
       width: double.infinity,
+
       // Subtle light-green surface keeps the panel on-theme without being loud
-      
       child: Center(
         child: Text(
           "Etched Worship",
@@ -584,3 +583,5 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     );
   }
 }
+
+

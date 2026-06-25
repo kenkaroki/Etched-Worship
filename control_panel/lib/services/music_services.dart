@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:control_pannel/controllers/files.dart';
+
 class MusicService {
-  final File _jsonFile = File("songs.ecw.json");
+  final File _jsonFile = File(songs_json);
 
   Future<void> initFile() async {
     if (!await _jsonFile.exists()) {

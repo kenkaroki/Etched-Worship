@@ -1,6 +1,8 @@
 import 'dart:io';
 
-final stack = File('stack.ecw.stc');
+import 'package:control_pannel/controllers/files.dart';
+
+final stack = File(stack_file);
 
 void write_to_stack(content) async {
   try {

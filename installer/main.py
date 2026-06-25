@@ -204,6 +204,8 @@ class ProgressPage(ctk.CTkFrame):
             if os.path.exists(zip_tmp_path):
                 os.remove(zip_tmp_path)
 
+            
+
             # Step 3: Handle Shortcut
             if self.parent.create_shortcut_var.get():
                 self.update_status("Creating desktop shortcuts...", 90)
