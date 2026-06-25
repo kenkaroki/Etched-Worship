@@ -121,8 +121,7 @@ jobs:
       - name: Package
         run: |
           cd build/macos/Build/Products/Release
-          zip -r ../../../../../${{ inputs.app-name }}.zip \
-            ${{ inputs.app-name }}.app
+          zip -r ../../../../../${{ inputs.app-name }}.zip .
 
       - uses: actions/upload-artifact@v4
         with:
