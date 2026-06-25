@@ -6,6 +6,7 @@ import 'package:control_pannel/screens/Homes.dart';
 import 'package:control_pannel/screens/music/music_page.dart';
 
 void main() {
+ WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
 

@@ -7,7 +7,6 @@ import 'package:canvas/services/stack_reader.dart';
 
 
 void main() {
-  print("Current directory: ${Directory.current.path}");
   runApp(const EtchedWorshipCanvas());
 }
 
