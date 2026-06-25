@@ -94,7 +94,7 @@ jobs:
 
       - name: Package Mac
         run: |
-          if [ -d latest/mac ]; then
+          if [ -d latest/macos ]; then
             cd latest
             zip -r "../release/mac-${{ steps.version.outputs.version }}.zip" mac
           fi
