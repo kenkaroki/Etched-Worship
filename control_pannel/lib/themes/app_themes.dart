@@ -200,13 +200,9 @@ class AppThemes {
       errorContainer: Color(0xFFFFDAD6),
       onErrorContainer: Color(0xFF410002),
 
-      // ignore: deprecated_member_use – kept for Flutter <3.18 compat
-      background: AppColors.lightBackground,
-      onBackground: AppColors.lightOnBackground,
-
       surface: AppColors.lightSurface,
       onSurface: AppColors.lightOnSurface,
-      surfaceVariant: AppColors.lightSurfaceVariant,
+      surfaceContainerHighest: AppColors.lightSurfaceVariant,
       onSurfaceVariant: AppColors.grey600,
 
       outline: AppColors.lightOutline,
@@ -270,14 +266,14 @@ class AppThemes {
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: AppColors.lightSurface,
         indicatorColor: AppColors.primaryExtraLight,
-        iconTheme: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.selected)) {
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
             return const IconThemeData(color: AppColors.primaryDark, size: 24);
           }
           return const IconThemeData(color: AppColors.grey500, size: 24);
         }),
-        labelTextStyle: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.selected)) {
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
             return const TextStyle(
               color: AppColors.primaryDark,
               fontWeight: FontWeight.w600,
@@ -464,32 +460,33 @@ class AppThemes {
 
       // ── Switch ────────────────────────────────────────────
       switchTheme: SwitchThemeData(
-        thumbColor: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.selected)) return AppColors.primary;
+        thumbColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.primary;
           return AppColors.grey400;
         }),
-        trackColor: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.selected))
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
             return AppColors.primaryLight;
+          }
           return AppColors.grey300;
         }),
       ),
 
       // ── Checkbox ──────────────────────────────────────────
       checkboxTheme: CheckboxThemeData(
-        fillColor: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.selected)) return AppColors.primary;
+        fillColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.primary;
           return Colors.transparent;
         }),
-        checkColor: MaterialStateProperty.all(Colors.white),
+        checkColor: WidgetStateProperty.all(Colors.white),
         side: const BorderSide(color: AppColors.grey400, width: 1.5),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
       ),
 
       // ── Radio ─────────────────────────────────────────────
       radioTheme: RadioThemeData(
-        fillColor: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.selected)) return AppColors.primary;
+        fillColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.primary;
           return AppColors.grey400;
         }),
       ),
@@ -588,20 +585,20 @@ class AppThemes {
 
       // ── Search bar ────────────────────────────────────────
       searchBarTheme: SearchBarThemeData(
-        backgroundColor: MaterialStateProperty.all(
+        backgroundColor: WidgetStateProperty.all(
           AppColors.lightSurfaceVariant,
         ),
-        elevation: MaterialStateProperty.all(0),
-        hintStyle: MaterialStateProperty.all(
+        elevation: WidgetStateProperty.all(0),
+        hintStyle: WidgetStateProperty.all(
           const TextStyle(color: AppColors.grey500),
         ),
-        textStyle: MaterialStateProperty.all(
+        textStyle: WidgetStateProperty.all(
           const TextStyle(color: AppColors.lightOnSurface),
         ),
-        shape: MaterialStateProperty.all(
+        shape: WidgetStateProperty.all(
           RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
-        padding: MaterialStateProperty.all(
+        padding: WidgetStateProperty.all(
           const EdgeInsets.symmetric(horizontal: 16),
         ),
       ),
@@ -638,13 +635,9 @@ class AppThemes {
       errorContainer: Color(0xFF93000A),
       onErrorContainer: Color(0xFFFFDAD6),
 
-      // ignore: deprecated_member_use
-      background: AppColors.darkBackground,
-      onBackground: AppColors.darkOnBackground,
-
       surface: AppColors.darkSurface,
       onSurface: AppColors.darkOnSurface,
-      surfaceVariant: AppColors.darkSurfaceVariant,
+      surfaceContainerHighest: AppColors.darkSurfaceVariant,
       onSurfaceVariant: Color(0xFFA0BBA0),
 
       outline: AppColors.darkOutline,
@@ -714,8 +707,8 @@ class AppThemes {
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: AppColors.darkSurface,
         indicatorColor: AppColors.primaryDark,
-        iconTheme: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.selected)) {
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
             return const IconThemeData(
               color: AppColors.primaryExtraLight,
               size: 24,
@@ -723,8 +716,8 @@ class AppThemes {
           }
           return const IconThemeData(color: AppColors.grey500, size: 24);
         }),
-        labelTextStyle: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.selected)) {
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
             return const TextStyle(
               color: AppColors.primaryLight,
               fontWeight: FontWeight.w600,
@@ -919,13 +912,15 @@ class AppThemes {
       switchTheme: SwitchThemeData(
         // MaterialStateProperty deprecated -> use WidgetStateProperty
         thumbColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.selected))
+          if (states.contains(WidgetState.selected)) {
             return AppColors.primaryLight;
+          }
           return AppColors.grey600;
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.selected))
+          if (states.contains(WidgetState.selected)) {
             return AppColors.primaryDark;
+          }
           return AppColors.grey800;
         }),
       ),
@@ -934,8 +929,9 @@ class AppThemes {
       checkboxTheme: CheckboxThemeData(
         // Checkbox theme - replace deprecated MaterialStateProperty
         fillColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.selected))
+          if (states.contains(WidgetState.selected)) {
             return AppColors.primaryLight;
+          }
           return Colors.transparent;
         }),
         checkColor: WidgetStateProperty.all(AppColors.primaryDeep),
@@ -947,8 +943,9 @@ class AppThemes {
       radioTheme: RadioThemeData(
         // Radio theme - replace deprecated MaterialStateProperty
         fillColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.selected))
+          if (states.contains(WidgetState.selected)) {
             return AppColors.primaryLight;
+          }
           return AppColors.grey600;
         }),
       ),
@@ -1053,20 +1050,20 @@ class AppThemes {
 
       // ── Search bar ────────────────────────────────────────
       searchBarTheme: SearchBarThemeData(
-        backgroundColor: MaterialStateProperty.all(
+        backgroundColor: WidgetStateProperty.all(
           AppColors.darkSurfaceVariant,
         ),
-        elevation: MaterialStateProperty.all(0),
-        hintStyle: MaterialStateProperty.all(
+        elevation: WidgetStateProperty.all(0),
+        hintStyle: WidgetStateProperty.all(
           const TextStyle(color: AppColors.grey500),
         ),
-        textStyle: MaterialStateProperty.all(
+        textStyle: WidgetStateProperty.all(
           const TextStyle(color: AppColors.darkOnSurface),
         ),
-        shape: MaterialStateProperty.all(
+        shape: WidgetStateProperty.all(
           RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
-        padding: MaterialStateProperty.all(
+        padding: WidgetStateProperty.all(
           const EdgeInsets.symmetric(horizontal: 16),
         ),
       ),

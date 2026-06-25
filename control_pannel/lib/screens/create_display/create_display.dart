@@ -542,7 +542,7 @@ class _SaveDialogState extends State<SaveDialog> {
             const SizedBox(height: 15),
 
             DropdownButtonFormField<String>(
-              value: selectedQueue,
+              initialValue: selectedQueue,
               decoration: const InputDecoration(
                 labelText: "Queue",
                 border: OutlineInputBorder(),
