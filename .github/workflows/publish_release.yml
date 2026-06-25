@@ -23,6 +23,7 @@ jobs:
         with:
           ref: builds
           fetch-depth: 0
+          lfs: true
 
       - name: Install GitHub CLI
         run: |
