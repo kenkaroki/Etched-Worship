@@ -96,7 +96,7 @@ jobs:
         run: |
           if [ -d latest/macos ]; then
             cd latest
-            zip -r "../release/mac-${{ steps.version.outputs.version }}.zip" mac
+            zip -r "../release/mac-${{ steps.version.outputs.version }}.zip" macos
           fi
 
       - name: Create Windows Release
