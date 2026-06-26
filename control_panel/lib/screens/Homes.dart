@@ -96,7 +96,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     print(stackContentFormart);
 
     String Background = Activeslide?.background.trim() ?? '';
-    String stackFormart = "$stackContentFormart,Background:$Background";
+    String stackFormart = "$stackContentFormart|||Background:$Background";
 
     write_to_stack(stackFormart);
   }

@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:canvas/services/stack_reader.dart';
 
-
 void main() {
   runApp(const EtchedWorshipCanvas());
 }
@@ -26,17 +25,14 @@ class _EtchedWorshipCanvasState extends State<EtchedWorshipCanvas> {
     super.initState();
 
     _loadContent();
-    print(_content.split(',')[0]);
     _timer = Timer.periodic(
       const Duration(seconds: 1),
       (_) => _checkForChanges(),
     );
-
-    print(_content.split(',')[0]);
   }
 
   Future<void> _loadContent() async {
-    String content = await readStack();
+    final content = await readStack();
 
     if (!mounted) return;
 
@@ -46,7 +42,7 @@ class _EtchedWorshipCanvasState extends State<EtchedWorshipCanvas> {
   }
 
   Future<void> _checkForChanges() async {
-    String latestContent = await readStack();
+    final latestContent = await readStack();
 
     if (latestContent != _content && mounted) {
       setState(() {
@@ -54,6 +50,11 @@ class _EtchedWorshipCanvasState extends State<EtchedWorshipCanvas> {
       });
     }
   }
+
+  String get _slideContent => _content.split('|||')[0];
+  String get _background => _content.contains('|||Background:')
+      ? _content.split('|||Background:')[1]
+      : 'color:#FFFFFF';
 
   @override
   void dispose() {
@@ -68,9 +69,8 @@ class _EtchedWorshipCanvasState extends State<EtchedWorshipCanvas> {
       home: Scaffold(
         body: Stack(
           children: [
-            const BackgroundLayer(),
-            
-            Canvas(content: _content.split(',')[0]),
+            BackgroundLayer(background: _background),
+            Canvas(content: _slideContent),
           ],
         ),
       ),
@@ -78,68 +78,20 @@ class _EtchedWorshipCanvasState extends State<EtchedWorshipCanvas> {
   }
 }
 
-class BackgroundLayer extends StatefulWidget {
-  const BackgroundLayer({super.key});
+class BackgroundLayer extends StatelessWidget {
+  final String background;
 
-  @override
-  State<BackgroundLayer> createState() => _BackgroundLayerState();
-}
-
-class _BackgroundLayerState extends State<BackgroundLayer> {
-  String background = "color:#FFFFFF";
-  Timer? _timer;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _loadContent();
-
-    _timer = Timer.periodic(
-      const Duration(seconds: 1),
-      (_) => _checkForChanges(),
-    );
-  }
-
-  Future<void> _loadContent() async {
-    String content = await readStack();
-
-    if (!mounted) return;
-
-    setState(() {
-      background = content.split('Background:')[1];
-    });
-  }
-
-  Future<void> _checkForChanges() async {
-    String latestContent = await readStack();
-
-    if (latestContent.split('Background:')[1] != background && mounted) {
-      setState(() {
-        background = latestContent;
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
+  const BackgroundLayer({required this.background, super.key});
 
   @override
   Widget build(BuildContext context) {
-    // IMAGE BACKGROUND
     if (background.startsWith("image:")) {
       final path = background.substring(6).trim();
-
       return SizedBox.expand(child: Image.file(File(path), fit: BoxFit.cover));
     }
 
-    // COLOR BACKGROUND
     if (background.startsWith("color:")) {
       final hex = background.substring(6).trim();
-
       return Container(color: _hexToColor(hex));
     }
 
@@ -151,7 +103,6 @@ class _BackgroundLayerState extends State<BackgroundLayer> {
     return Color(int.parse("FF$hex", radix: 16));
   }
 }
-
 
 class Canvas extends StatelessWidget {
   final String content;
@@ -177,8 +128,7 @@ class Canvas extends StatelessWidget {
     }
 
     if (content.startsWith("Image:")) {
-      String path = content.substring(6).trim();
-
+      final path = content.substring(6).trim();
       return SizedBox.expand(
         child: Image.file(File(path), fit: BoxFit.contain),
       );

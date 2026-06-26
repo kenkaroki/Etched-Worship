@@ -176,7 +176,7 @@ class ProgressPage(ctk.CTkFrame):
             with open(bat_path, "w", newline="\r\n") as f:
                 f.write("@echo off\r\n")
                 f.write('start "" "%~dp0canvas\\canvas.exe"\r\n')
-                f.write('start "" "%~dp0control_panel\\control_panel.exe"\r\n')
+                f.write('start "" "%~dp0control_panel\\control_pannel.exe"\r\n')
 
             # Silent VBScript wrapper — shortcut points here so no CMD window flashes
             vbs_path = os.path.join(target_dir, "Etched Worship.vbs")
@@ -197,7 +197,7 @@ class ProgressPage(ctk.CTkFrame):
                 f.write("#!/bin/bash\n")
                 f.write('DIR="$(cd "$(dirname "$0")" && pwd)"\n')
                 f.write('open "$DIR/canvas/canvas.app"\n')
-                f.write('open "$DIR/control_panel/control_panel.app"\n')
+                f.write('open "$DIR/control_panel/control_pannel.app"\n')
             os.chmod(launcher_path, 0o755)
             return launcher_path
 
