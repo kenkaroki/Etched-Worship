@@ -1,6 +1,8 @@
 import 'dart:io';
 
-final File stackFile = File("stack.ecw.stc");
+import 'package:canvas/controllers/file.dart';
+
+final File stackFile = File(stack_file);
 
 Future<String> readStack() async {
   try {
