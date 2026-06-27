@@ -33,6 +33,8 @@ jobs:
   build-and-deploy:
     name: Build static site & push to gh-pages
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       # ── Step 1: Check out the full repo ─────────────────────

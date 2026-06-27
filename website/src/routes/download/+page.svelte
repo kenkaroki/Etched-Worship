@@ -184,41 +184,6 @@
       </table>
     </div>
   </section>
-
-  <section class="section--sm build-source" aria-labelledby="source-heading">
-    <div class="container">
-      <div class="build-source__card card">
-        <div class="build-source__icon" aria-hidden="true">🛠️</div>
-
-        <div class="build-source__content">
-          <h2 id="source-heading">Build from Source</h2>
-          <p>
-            Prefer to compile Etched Worship yourself? The full source is
-            available on GitHub. You will need the Flutter SDK installed.
-          </p>
-
-          <pre class="build-source__code" aria-label="Clone and run commands"><code><span class="code-comment"># Clone the repository</span>
-git clone https://github.com/kenkaroki/Etched-Worship.git
-<span class="code-comment"># Enter the control panel</span>
-cd Etched-Worship/control_pannel
-<span class="code-comment"># Install dependencies and run</span>
-flutter pub get &amp;&amp; flutter run</code></pre>
-        </div>
-
-        <a
-          href="https://github.com/kenkaroki/Etched-Worship"
-          class="btn btn-outline"
-          id="source-github-btn"
-          target="_blank"
-          rel="noopener noreferrer"
-          style="flex-shrink:0;"
-        >
-          View Repository
-        </a>
-      </div>
-    </div>
-  </section>
-
 </div>
 
 <style>
@@ -330,55 +295,12 @@ flutter pub get &amp;&amp; flutter run</code></pre>
     color: var(--color-primary-light) !important;
     width: 140px;
   }
-  .build-source__card {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--space-6);
-    flex-wrap: wrap;
-  }
-  .build-source__icon {
-    font-size: 2.5rem;
-    flex-shrink: 0;
-  }
-  .build-source__content {
-    flex: 1;
-    min-width: 260px;
-  }
-  .build-source__content h2 {
-    font-size: 1.3rem;
-    margin-bottom: var(--space-3);
-  }
-  .build-source__content p {
-    font-size: 0.9375rem;
-    margin-bottom: var(--space-4);
-    max-width: none;
-  }
-  .build-source__code {
-    background: #0a0f0a;
-    border: 1px solid var(--color-outline);
-    border-radius: var(--radius-sm);
-    padding: var(--space-4) var(--space-5);
-    overflow-x: auto;
-    font-family: var(--font-mono);
-    font-size: 0.825rem;
-    line-height: 1.8;
-    color: #c8e6c9;
-    -webkit-overflow-scrolling: touch;
-  }
-  .build-source__code :global(.code-comment) {
-    color: var(--color-text-dim);
-  }
-  .code-comment {
-    color: var(--color-text-dim);
-  }
+  
   @media (max-width: 768px) {
     .download-cards {
       grid-template-columns: 1fr;
       max-width: 400px;
       margin-inline: auto;
-    }
-    .build-source__card {
-      flex-direction: column;
     }
   }
 </style>
