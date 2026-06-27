@@ -1,0 +1,117 @@
+name: Build Installers
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g. 1.0.0)'
+        required: true
+        default: '1.0.0'
+
+jobs:
+  build:
+    name: Build – ${{ matrix.platform }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: windows
+            ext: .exe
+            extra_flags: --hidden-import=win32com.client
+          - os: macos-latest
+            platform: macos
+            ext: ""
+            extra_flags: ""
+          - os: ubuntu-latest
+            platform: linux
+            ext: ""
+            extra_flags: ""
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Set filename
+        id: ver
+        shell: bash
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "filename=Etched Worship ${{ matrix.platform }}-${VERSION} installer" >> "$GITHUB_OUTPUT"
+
+      - name: Install Python packages
+        shell: bash
+        run: |
+          pip install pyinstaller customtkinter requests
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            pip install pywin32
+          fi
+
+      - name: Install Linux system dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y python3-tk
+
+      - name: Build with PyInstaller
+        working-directory: installer
+        shell: bash
+        run: |
+          [[ "${{ runner.os }}" == "Windows" ]] && SEP=";" || SEP=":"
+          pyinstaller \
+            --onefile \
+            --windowed \
+            --icon="icons/Etched Worship.ico" \
+            --add-data "icons/Etched Worship.ico${SEP}icons" \
+            --name="${{ steps.ver.outputs.filename }}" \
+            --collect-data customtkinter \
+            ${{ matrix.extra_flags }} \
+            main.py
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer-${{ matrix.platform }}
+          path: "installer/dist/${{ steps.ver.outputs.filename }}${{ matrix.ext }}"
+          if-no-files-found: error
+
+  release:
+    name: Publish Release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "installer-${{ github.event.inputs.version }}"
+          name: "Etched Worship Installer ${{ github.event.inputs.version }}"
+          body: |
+            ## Etched Worship Installer ${{ github.event.inputs.version }}
+
+            Download the installer for your platform:
+
+            | Platform | File |
+            | -------- | ---- |
+            | Windows  | `Etched Worship windows-${{ github.event.inputs.version }} installer.exe` |
+            | macOS    | `Etched Worship macos-${{ github.event.inputs.version }} installer` |
+            | Linux    | `Etched Worship linux-${{ github.event.inputs.version }} installer` |
+          files: dist/*
+          fail_on_unmatched_files: true
+          make_latest: true
