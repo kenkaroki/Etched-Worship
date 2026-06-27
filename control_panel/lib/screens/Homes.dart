@@ -85,7 +85,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     String content = Activeslide?.content.trim() ?? '';
     List contentSplits = content.split(':');
     if (contentSplits[0].toLowerCase() == 'text') {
-      stackContentFormart = "Text:${content.split('text:')[1]}";
+      stackContentFormart = "Text:${content.split('text:')[1]}".replaceAll('\n' , "<|!&%&!|>");
     } else if (contentSplits[0].toLowerCase() == 'image') {
       stackContentFormart = "Image:${content.split("image:")[1]}";
       stackContentFormart = stackContentFormart.replaceAll('\\', '/');

@@ -116,7 +116,7 @@ class Canvas extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: AutoSizeText(
-            content.substring(5),
+            content.substring(5).replaceAll("<|!&%&!|>", "\n"),
             textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 40, fontWeight: FontWeight.w500),
             minFontSize: 10,

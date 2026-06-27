@@ -51,7 +51,7 @@ class TextSlideEditor extends StatelessWidget {
           child: ElevatedButton.icon(
             onPressed: onSend,
             icon: const Icon(Icons.add),
-            label: const Text("Add to Default Queue"),
+            label: const Text("Save"),
           ),
         ),
       ],
