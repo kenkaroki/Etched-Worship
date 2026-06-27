@@ -12,12 +12,12 @@
     version: string;
   }
 
-  // ── Reactive State ────────────────────────────────────────
-  let latestVersion = 'v1.0.0';
-  let isLoading = true;
-  let hasError = false;
+  // ── Reactive State (Svelte 5 Runes) ───────────────────────
+  let latestDisplayVersion = $state('v1.0.0'); 
+  let isLoading = $state(true);
+  let hasError = $state(false);
 
-  let platforms: Platform[] = [
+  let platforms: Platform[] = $state([
     {
       platform:    'Windows',
       icon:        '🪟',
@@ -29,8 +29,8 @@
     {
       platform:    'macOS',
       icon:        '🍎',
-      fileFormat:  '.dmg Package', // Note: Your workflow currently builds an extensionless binary, updated below accordingly.
-      arch:        'Apple Silicon & Intel',
+      fileFormat:  'Executable Binary',
+      arch:        'Apple Silicon (arm64)',
       downloadUrl: '',
       version:     '--',
     },
@@ -42,7 +42,7 @@
       downloadUrl: '',
       version:     '--',
     },
-  ];
+  ]);
 
   // ── Requirements data ─────────────────────────────────────
   const requirements = [
@@ -59,25 +59,36 @@
       if (!res.ok) throw new Error('Failed to fetch release info');
       
       const data = await res.json();
-      latestVersion = data.tag_name; // e.g., "installer-1.0.0"
+      
+      // Handle version rendering gracefully using string checks
+      if (data.name) {
+        latestDisplayVersion = data.name;
+      } else if (data.tag_name) {
+        latestDisplayVersion = data.tag_name.replace('installer-', 'v');
+      }
+
+      // Safeguard extraction of clean numbers from tag "installer-1.0.0" -> "1.0.0"
+      const rawVersionStr = data.tag_name ? data.tag_name.replace('installer-', '') : '1.0.0'; 
 
       // Update the platforms array with actual asset URLs
       platforms = platforms.map(p => {
-        // Map local platform name to workflow naming scheme
+        if (!data.assets || !Array.isArray(data.assets)) return p;
+        
         const workflowPlatform = p.platform.toLowerCase(); // 'windows', 'macos', 'linux'
         
-        // Find the asset that matches your workflow's naming scheme:
-        // "Etched Worship {platform}-{version} installer"
-        const asset = data.assets.find((a: any) => 
-          a.name.toLowerCase().includes(`etched worship ${workflowPlatform}`) &&
-          a.name.toLowerCase().includes('installer')
-        );
+        // Matches the explicit format returned by your API:
+        // "Etched.Worship.windows-1.0.0.installer.exe"
+        const expectedFilename = workflowPlatform === 'windows'
+          ? `Etched.Worship.windows-${rawVersionStr}.installer.exe`
+          : `Etched.Worship.${workflowPlatform}-${rawVersionStr}.installer`;
+
+        const asset = data.assets.find((a: any) => a.name === expectedFilename);
 
         if (asset) {
           return {
             ...p,
             downloadUrl: asset.browser_download_url,
-            version: data.tag_name.replace('installer-', 'v') // Formats "installer-1.0.0" to "v1.0.0"
+            version: `v${rawVersionStr}`
           };
         }
         return p;
@@ -114,7 +125,7 @@
       <div class="download-header__badges">
         <span class="badge badge-green">
           <span class="dl-dot" aria-hidden="true"></span>
-          Latest: {latestVersion.replace('installer-', 'v')}
+          Latest: {latestDisplayVersion}
         </span>
         <a
           href="https://github.com/kenkaroki/Etched-Worship/releases"
@@ -187,7 +198,6 @@
 </div>
 
 <style>
-  /* Keep your existing component CSS styling intact below */
   .download-header {
     position: relative;
     overflow: hidden;
@@ -290,7 +300,7 @@
   .requirements__table tr:last-child td {
     border-bottom: none;
   }
-  .requirements__label {
+  .requirements__table .requirements__label {
     font-weight: 600;
     color: var(--color-primary-light) !important;
     width: 140px;
