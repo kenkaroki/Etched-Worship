@@ -139,3 +139,10 @@ jobs:
           echo "windows-${{ steps.version.outputs.version }}"
           echo "linux-${{ steps.version.outputs.version }}"
           echo "mac-${{ steps.version.outputs.version }}"
+
+      - name: Trigger Build Installers
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run build-installers.yml \
+            --field version="${{ steps.version.outputs.version }}"
