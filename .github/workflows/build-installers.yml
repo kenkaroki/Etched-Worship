@@ -7,6 +7,7 @@ on:
         description: 'Version number (e.g. 1.0.0)'
         required: true
         default: '1.0.0'
+
 permissions:
   contents: write
   actions: write
@@ -53,7 +54,8 @@ jobs:
       - name: Install Python packages
         shell: bash
         run: |
-          pip install pyinstaller customtkinter requests
+          # Added pillow so PyInstaller can automatically handle cross-platform icon conversions
+          pip install pyinstaller customtkinter requests pillow
           if [[ "${{ runner.os }}" == "Windows" ]]; then
             pip install pywin32
           fi
@@ -68,11 +70,22 @@ jobs:
         working-directory: installer
         shell: bash
         run: |
-          [[ "${{ runner.os }}" == "Windows" ]] && SEP=";" || SEP=":"
+          # Establish parameters depending on the runner environment
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            SEP=";"
+            ICON_FLAG="--icon=icons/Etched Worship.ico"
+          elif [[ "${{ runner.os }}" == "macOS" ]]; then
+            SEP=":"
+            ICON_FLAG="--icon=icons/Etched Worship.ico"
+          else
+            SEP=":"
+            ICON_FLAG="" # Linux window managers don't use hardcoded bundle icons via PyInstaller flags
+          fi
+
           pyinstaller \
             --onefile \
             --windowed \
-            --icon="icons/Etched Worship.ico" \
+            $ICON_FLAG \
             --add-data "icons/Etched Worship.ico${SEP}icons" \
             --name="${{ steps.ver.outputs.filename }}" \
             --collect-data customtkinter \
