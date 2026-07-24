@@ -224,6 +224,29 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     return Container(color: Colors.black);
   }
 
+  // ================= HELPER: COLOR PARSER =================
+
+  Color _parseTextColor(String rawColorString) {
+    try {
+      String clean = rawColorString.trim();
+
+      // Handle hex colors (#FFFFFF or FFFFFF or 0xFFFFFFFF)
+      if (clean.contains('#')) {
+        clean = clean.replaceAll('#', '');
+        if (clean.length == 6) return Color(int.parse("0xFF$clean"));
+        if (clean.length == 8) return Color(int.parse("0x$clean"));
+      }
+
+      // Handle Flutter color value string format e.g. Color(0xff4caf50) or MaterialColor(primary value: Color(0xff4caf50))
+      final valueMatch = RegExp(r'0x[0-9a-fA-F]+').firstMatch(clean);
+      if (valueMatch != null) {
+        return Color(int.parse(valueMatch.group(0)!));
+      }
+    } catch (_) {}
+
+    return Colors.white; // Default fallback
+  }
+
   // ================= SLIDE CONTENT RENDERER =================
 
   Widget _buildSlideContentWidget(SlideItem slide) {
@@ -242,48 +265,40 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
       );
     }
 
-    if (content.toLowerCase().startsWith('text:')) {
-      final content_ = content.substring(5).trim();
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Text(
-            content_,
-            textAlign: TextAlign.center,
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Colors.white,
-              fontWeight: FontWeight.w500,
-              height: 1.3,
-              shadows: [
-                Shadow(
-                  blurRadius: 4.0,
-                  color: Colors.black87,
-                  offset: Offset(1.5, 1.5),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
+    // Extract text payload
+    String rawText = content.toLowerCase().startsWith('text:')
+        ? content.substring(5).trim()
+        : content;
+
+    Color textColor = Colors.white;
+
+    // Regex to match <||COLOR:<color_value>||>
+    final colorRegex = RegExp(r'<\|\|COLOR:(.*?)\|\|>');
+    final match = colorRegex.firstMatch(rawText);
+
+    if (match != null) {
+      final colorString = match.group(1);
+      if (colorString != null) {
+        textColor = _parseTextColor(colorString);
+      }
+      // Trim out the color markup tag from the visible text
+      rawText = rawText.replaceAll(colorRegex, '').trim();
     }
 
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Text(
-          content,
+          rawText,
           textAlign: TextAlign.center,
           maxLines: 3,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
-            color: Colors.white,
+            color: textColor,
             fontWeight: FontWeight.w500,
             height: 1.3,
-            shadows: [
+            shadows: const [
               Shadow(
                 blurRadius: 4.0,
                 color: Colors.black87,
@@ -531,8 +546,6 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                   width: 350,
                   child: Container(
                     decoration: BoxDecoration(
-                      // Subtle green-tinted surface for the queue panel
-                      // color: AppColors.lightSurfaceVariant,
                       border: Border(
                         left: BorderSide(color: colorScheme.outlineVariant),
                       ),
@@ -555,7 +568,6 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                         TabBar(
                           controller: tab,
                           isScrollable: true,
-                          // Tab colours come from TabBarTheme in AppThemes
                           tabs: queueNames
                               .map((name) => Tab(text: name))
                               .toList(),
