@@ -116,7 +116,7 @@ class _MusicPageState extends State<MusicPage> {
           title: text
               .substring(0, text.length > 5 ? 10 : text.length)
               .padRight(3, '.....'),
-          content: text,
+          content: "lyrics:$text",
           background: slide["background"] ?? "color:#cccccc",
         ),
       );
