@@ -109,16 +109,58 @@ class Canvas extends StatelessWidget {
 
   const Canvas({required this.content, super.key});
 
+  // Helper method to parse color strings (Hex or Flutter Color value strings)
+  Color _parseTextColor(String rawColorString) {
+    try {
+      String clean = rawColorString.trim();
+
+      // Handle hex colors (#FFFFFF or FFFFFF or 0xFFFFFFFF)
+      if (clean.contains('#')) {
+        clean = clean.replaceAll('#', '');
+        if (clean.length == 6) return Color(int.parse("0xFF$clean"));
+        if (clean.length == 8) return Color(int.parse("0x$clean"));
+      }
+
+      // Handle Flutter color string format e.g. Color(0xff4caf50)
+      final valueMatch = RegExp(r'0x[0-9a-fA-F]+').firstMatch(clean);
+      if (valueMatch != null) {
+        return Color(int.parse(valueMatch.group(0)!));
+      }
+    } catch (_) {}
+
+    return Colors.black; // Fallback text color if parsing fails
+  }
+
   @override
   Widget build(BuildContext context) {
     if (content.startsWith("Text:")) {
+      String rawText = content.substring(5).replaceAll("<|!&%&!|>", "\n");
+      Color textColor = Colors.black;
+
+      // Regex to detect and extract <||COLOR:<color_value>||>
+      final colorRegex = RegExp(r'<\|\|COLOR:(.*?)\|\|>');
+      final match = colorRegex.firstMatch(rawText);
+
+      if (match != null) {
+        final colorString = match.group(1);
+        if (colorString != null) {
+          textColor = _parseTextColor(colorString);
+        }
+        // Strip out the color tag from the visible text output
+        rawText = rawText.replaceAll(colorRegex, '').trim();
+      }
+
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: AutoSizeText(
-            content.substring(5).replaceAll("<|!&%&!|>", "\n"),
+            rawText,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 40, fontWeight: FontWeight.w500),
+            style: TextStyle(
+              fontSize: 40,
+              fontWeight: FontWeight.w500,
+              color: textColor,
+            ),
             minFontSize: 10,
             maxLines: 20,
             wrapWords: true,

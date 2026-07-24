@@ -57,10 +57,10 @@ class InstallerApp(ctk.CTk):
     def get_default_install_dir(self):
         home = os.path.expanduser("~")
         if platform.system() == "Windows":
-            return os.path.join(os.environ.get("ProgramFiles", "C:\\Program Files"), "Etched Worship")
+            return os.path.join(os.environ.get("ProgramFiles", "C:\\Program Files"))
         elif platform.system() == "Darwin":
-            return os.path.join("/Applications", "Etched Worship")
-        return os.path.join(home, ".Etched Worship")
+            return os.path.join("/Applications")
+        return os.path.join(home)
 
     def show_page(self, index):
         if self.current_page: self.current_page.destroy()
