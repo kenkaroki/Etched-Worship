@@ -10,6 +10,13 @@ Color hexToColor(String hex) {
   return Color(int.parse("FF$hex", radix: 16));
 }
 
+// Encodes [text] with [color] into the shared storage format used across
+// the app: "text<||COLOR: #rrggbb||>"
+String encodeTextColor(String text, Color color) {
+  final hex = "#${color.value.toRadixString(16).substring(2)}";
+  return "$text<||COLOR: $hex||>";
+}
+
 class VerseSlidePreviewPage extends StatefulWidget {
   final String verseText;
   final String verse;
@@ -31,6 +38,19 @@ class _VerseSlidePreviewPageState extends State<VerseSlidePreviewPage> {
   List<String> imageBackgrounds = [];
 
   String? selectedBackground;
+  Color selectedTextColor = Colors.white;
+
+  // Palette of quick-pick text colors.
+  static const List<Color> _textColorOptions = [
+    Colors.white,
+    Colors.black,
+    Colors.red,
+    Colors.orange,
+    Colors.yellow,
+    Colors.green,
+    Colors.blue,
+    Colors.purple,
+  ];
 
   @override
   void initState() {
@@ -97,11 +117,11 @@ class _VerseSlidePreviewPageState extends State<VerseSlidePreviewPage> {
                 child: Text(
                   widget.verseText,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    shadows: [
+                    color: selectedTextColor,
+                    shadows: const [
                       Shadow(
                         blurRadius: 6,
                         color: Colors.black,
@@ -115,6 +135,38 @@ class _VerseSlidePreviewPageState extends State<VerseSlidePreviewPage> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildTextColorSelector() {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: _textColorOptions.map((c) {
+        final isSelected = c.value == selectedTextColor.value;
+
+        return GestureDetector(
+          onTap: () {
+            setState(() {
+              selectedTextColor = c;
+            });
+          },
+          child: Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: c,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: isSelected
+                    ? Theme.of(context).colorScheme.primary
+                    : Colors.grey,
+                width: isSelected ? 3 : 1,
+              ),
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 
@@ -242,6 +294,21 @@ class _VerseSlidePreviewPageState extends State<VerseSlidePreviewPage> {
 
             _buildPreview(),
 
+            const SizedBox(height: 20),
+
+            Text(
+              "Text Color",
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            _buildTextColorSelector(),
+
             const SizedBox(height: 24),
 
             Text(
@@ -269,7 +336,10 @@ class _VerseSlidePreviewPageState extends State<VerseSlidePreviewPage> {
                     context: context,
                     builder: (_) => SaveDialog(
                       tile: widget.verse,
-                      text: widget.verseText,
+                      text: encodeTextColor(
+                        widget.verseText,
+                        selectedTextColor,
+                      ),
                       background: selectedBackground ?? "",
                     ),
                   ).then((_) {
@@ -292,7 +362,12 @@ class SaveDialog extends StatefulWidget {
   final String text;
   final String? background;
 
-  const SaveDialog({super.key, required this.text, required this.background , required this.tile});
+  const SaveDialog({
+    super.key,
+    required this.text,
+    required this.background,
+    required this.tile,
+  });
 
   @override
   State<SaveDialog> createState() => _SaveDialogState();

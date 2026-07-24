@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:control_pannel/models/queue_models.dart';
 import 'package:control_pannel/services/queue_manager.dart';
-import 'package:control_pannel/themes/app_themes.dart'; // AppColors lives here
+import 'package:control_pannel/themes/app_themes.dart';
 import 'package:flutter/material.dart';
 import 'package:control_pannel/services/create_display_service.dart';
 import 'package:control_pannel/services/backgrounds.dart';
@@ -10,7 +10,18 @@ import 'image_slide_editor.dart';
 
 Color hexToColor(String hex) {
   hex = hex.replaceFirst("#", "");
-  return Color(int.parse("FF$hex", radix: 16));
+  if (hex.length == 6) {
+    hex = "FF$hex";
+  }
+  return Color(int.parse(hex, radix: 16));
+}
+
+String colorToHex(Color color) {
+  return color.value
+      .toRadixString(16)
+      .padLeft(8, '0')
+      .substring(2)
+      .toUpperCase();
 }
 
 class AddMedia extends StatefulWidget {
@@ -24,13 +35,11 @@ class _AddMediaState extends State<AddMedia> {
   final DisplayService _displayService = DisplayService();
 
   // ================= STEP CONTROL =================
-  // null  = type selector
-  // "text"  = text editor mode
-  // "image" = image editor mode
   String? slideType;
 
   // ================= TEXT =================
   final TextEditingController textController = TextEditingController();
+  Color selectedTextColor = Colors.white;
 
   // ================= IMAGE =================
   String? pickedImagePath;
@@ -41,7 +50,6 @@ class _AddMediaState extends State<AddMedia> {
   final BackgroundsService _backgroundsService = BackgroundsService();
   List<List<dynamic>> solidBackgrounds = [];
   List<String> imageBackgrounds = [];
-  // used for saving image slides without a name
   int imgcount = 0;
 
   bool save_to_diffrent_queue = false;
@@ -66,7 +74,6 @@ class _AddMediaState extends State<AddMedia> {
     }
   }
 
-  // ================= PICK IMAGE =================
   Future<void> pickImage() async {
     final path = await _displayService.pickImage();
     if (path != null) {
@@ -76,23 +83,23 @@ class _AddMediaState extends State<AddMedia> {
     }
   }
 
-  // ================= RESET (GO BACK) =================
   void reset() {
     setState(() {
       slideType = null;
       textController.clear();
+      selectedTextColor = Colors.white;
       pickedImagePath = null;
       selectedBackground = null;
     });
   }
 
-  // ================= SEND =================
   Future<void> add_to_que() async {
     await showDialog(
       context: context,
       builder: (_) => SaveDialog(
         slideType: slideType!,
         text: textController.text,
+        textColor: selectedTextColor,
         imagePath: pickedImagePath,
         background: selectedBackground,
         imageCount: imgcount,
@@ -109,7 +116,6 @@ class _AddMediaState extends State<AddMedia> {
     }
   }
 
-  // ================= PREVIEW =================
   Widget buildPreview() {
     Widget background;
     if (selectedBackground != null) {
@@ -127,7 +133,6 @@ class _AddMediaState extends State<AddMedia> {
           ),
         );
       } else {
-        // Fallback: subtle green-tinted surface from the theme palette
         background = Container(color: AppColors.lightSurfaceVariant);
       }
     } else {
@@ -142,11 +147,11 @@ class _AddMediaState extends State<AddMedia> {
         child: Text(
           textController.text.isEmpty ? "Preview" : textController.text,
           textAlign: TextAlign.center,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
-            shadows: [
+            color: selectedTextColor,
+            shadows: const [
               Shadow(blurRadius: 6, color: Colors.black, offset: Offset(2, 2)),
             ],
           ),
@@ -173,13 +178,11 @@ class _AddMediaState extends State<AddMedia> {
     );
   }
 
-  // ================= TYPE SELECT SCREEN =================
   Widget buildTypeSelector() {
     return Center(
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // ── TEXT card ─────────────────────────────────
           GestureDetector(
             onTap: () => setState(() => slideType = "text"),
             child: Container(
@@ -187,7 +190,6 @@ class _AddMediaState extends State<AddMedia> {
               height: 140,
               margin: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                // Primary green for the text-slide option
                 color: AppColors.primary,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
@@ -217,8 +219,6 @@ class _AddMediaState extends State<AddMedia> {
               ),
             ),
           ),
-
-          // ── IMAGE card ────────────────────────────────
           GestureDetector(
             onTap: () => setState(() => slideType = "image"),
             child: Container(
@@ -226,7 +226,6 @@ class _AddMediaState extends State<AddMedia> {
               height: 140,
               margin: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                // Slightly darker green distinguishes the two cards
                 color: AppColors.primaryDark,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
@@ -261,7 +260,6 @@ class _AddMediaState extends State<AddMedia> {
     );
   }
 
-  // ================= BACKGROUND SELECTOR =================
   Widget buildBackgroundSelector() {
     return SingleChildScrollView(
       child: Column(
@@ -290,7 +288,6 @@ class _AddMediaState extends State<AddMedia> {
                       color: bg[1],
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(
-                        // Primary green selection ring; neutral outline otherwise
                         color: isSelected
                             ? AppColors.primary
                             : AppColors.lightOutline,
@@ -378,12 +375,10 @@ class _AddMediaState extends State<AddMedia> {
     );
   }
 
-  // ================= MAIN UI =================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        // AppBar styling (green bg, white fg) is handled by AppBarTheme
         title: const Text("Add Media"),
         centerTitle: true,
         leading: slideType != null
@@ -399,7 +394,6 @@ class _AddMediaState extends State<AddMedia> {
                   Expanded(
                     child: Row(
                       children: [
-                        // ── LEFT: editor ─────────────────────────
                         Expanded(
                           flex: 2,
                           child: slideType == "text"
@@ -407,6 +401,12 @@ class _AddMediaState extends State<AddMedia> {
                                   controller: textController,
                                   onChanged: (_) => setState(() {}),
                                   onSend: add_to_que,
+                                  selectedTextColor: selectedTextColor,
+                                  onTextColorChanged: (color) {
+                                    setState(() {
+                                      selectedTextColor = color;
+                                    });
+                                  },
                                 )
                               : ImageSlideEditor(
                                   pickedImagePath: pickedImagePath,
@@ -415,7 +415,6 @@ class _AddMediaState extends State<AddMedia> {
                                 ),
                         ),
                         const SizedBox(width: 10),
-                        // ── RIGHT: background picker ──────────────
                         Expanded(
                           flex: 2,
                           child: Column(
@@ -437,7 +436,6 @@ class _AddMediaState extends State<AddMedia> {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  // ── PREVIEW ──────────────────────────────────────
                   buildPreview(),
                 ],
               ),
@@ -449,6 +447,7 @@ class _AddMediaState extends State<AddMedia> {
 class SaveDialog extends StatefulWidget {
   final String slideType;
   final String text;
+  final Color textColor;
   final String? imagePath;
   final String? background;
   final int imageCount;
@@ -458,6 +457,7 @@ class SaveDialog extends StatefulWidget {
     super.key,
     required this.slideType,
     required this.text,
+    required this.textColor,
     required this.imagePath,
     required this.background,
     required this.imageCount,
@@ -472,17 +472,14 @@ class _SaveDialogState extends State<SaveDialog> {
   late TextEditingController titleController;
 
   List<String> get queueNames => QueueManager.queues.keys.toList();
-
   String? selectedQueue;
 
   @override
   void initState() {
     super.initState();
-
     selectedQueue = queueNames.isNotEmpty ? queueNames[0] : null;
 
     String defaultTitle;
-
     if (widget.slideType == "text") {
       defaultTitle = widget.text.length > 7
           ? "${widget.text.substring(0, 7)}..."
@@ -498,11 +495,14 @@ class _SaveDialogState extends State<SaveDialog> {
     if (selectedQueue == null) return;
 
     if (widget.slideType == "text") {
+      final hexColor = colorToHex(widget.textColor);
+      final formattedContent = "text:${widget.text}<||COLOR:$hexColor||>";
+
       QueueManager.addSlide(
         selectedQueue!,
         SlideItem(
           title: titleController.text,
-          content: "text:${widget.text}",
+          content: formattedContent,
           background: widget.background ?? "",
         ),
       );
@@ -538,11 +538,9 @@ class _SaveDialogState extends State<SaveDialog> {
                 border: OutlineInputBorder(),
               ),
             ),
-
             const SizedBox(height: 15),
-
             DropdownButtonFormField<String>(
-              initialValue: selectedQueue,
+              value: selectedQueue,
               decoration: const InputDecoration(
                 labelText: "Queue",
                 border: OutlineInputBorder(),

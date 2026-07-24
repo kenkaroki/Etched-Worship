@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:control_pannel/services/backgrounds.dart';
-import 'slide_view.dart'; // import buildBackground
+import 'slide_view.dart'; // import buildBackground, encodeSlideText
 
 class SlideEditor extends StatefulWidget {
   final Function(String text, String? background) onSave;
@@ -16,10 +16,23 @@ class SlideEditor extends StatefulWidget {
 class _SlideEditorState extends State<SlideEditor> {
   final TextEditingController _slideTextController = TextEditingController();
   String? _selectedBackground;
+  Color _selectedTextColor = Colors.white;
 
   final BackgroundsService _backgroundsService = BackgroundsService();
   List<Color> bgColors = [];
   List<String> bgImages = [];
+
+  // Palette of quick-pick text colors.
+  static const List<Color> _textColorOptions = [
+    Colors.white,
+    Colors.black,
+    Colors.red,
+    Colors.orange,
+    Colors.yellow,
+    Colors.green,
+    Colors.blue,
+    Colors.purple,
+  ];
 
   @override
   void initState() {
@@ -53,43 +66,93 @@ class _SlideEditorState extends State<SlideEditor> {
           padding: EdgeInsets.all(8.0),
           child: Text(
             "Create Slide",
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
         ),
 
         Expanded(
           child: Row(
             children: [
-              // TEXT
+              // ── LEFT COLUMN: TEXT INPUT & TEXT COLOR ──────────────────
               Expanded(
                 flex: 2,
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
-                  child: TextField(
-                    controller: _slideTextController,
-                    maxLength: 400,
-                    maxLines: null,
-                    expands: true,
-                    onChanged: (_) => setState(() {}),
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      hintText: "Enter lyrics...",
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _slideTextController,
+                          maxLength: 400,
+                          maxLines: null,
+                          expands: true,
+                          onChanged: (_) => setState(() {}),
+                          decoration: const InputDecoration(
+                            border: OutlineInputBorder(),
+                            hintText: "Enter lyrics...",
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        "Text Color",
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: _textColorOptions.map((c) {
+                          final isSelected =
+                              c.value == _selectedTextColor.value;
+
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _selectedTextColor = c;
+                              });
+                            },
+                            child: Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: c,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: isSelected
+                                      ? Colors.blueAccent
+                                      : Colors.black26,
+                                  width: isSelected ? 3 : 1,
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
                   ),
                 ),
               ),
 
-              // BACKGROUNDS
+              // ── RIGHT COLUMN: BACKGROUND OPTIONS ──────────────────────
               Expanded(
                 flex: 2,
                 child: SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text("Solid Colors"),
+                      const Text(
+                        "Solid Colors",
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
                       Wrap(
                         spacing: 10,
                         runSpacing: 10,
@@ -108,9 +171,7 @@ class _SlideEditorState extends State<SlideEditor> {
                               height: 55,
                               decoration: BoxDecoration(
                                 color: c,
-                                border: Border.all(
-                                  color: Colors.black26,
-                                ),
+                                border: Border.all(color: Colors.black26),
                               ),
                             ),
                           );
@@ -119,7 +180,14 @@ class _SlideEditorState extends State<SlideEditor> {
 
                       const SizedBox(height: 15),
 
-                      const Text("Images"),
+                      const Text(
+                        "Images",
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
                       Wrap(
                         spacing: 10,
                         runSpacing: 10,
@@ -141,7 +209,7 @@ class _SlideEditorState extends State<SlideEditor> {
                             ),
                           );
                         }).toList(),
-                      )
+                      ),
                     ],
                   ),
                 ),
@@ -150,7 +218,7 @@ class _SlideEditorState extends State<SlideEditor> {
           ),
         ),
 
-        // PREVIEW 
+        // ── PREVIEW ───────────────────────────────────────────────────
         Center(
           child: Container(
             width: 260,
@@ -172,8 +240,8 @@ class _SlideEditorState extends State<SlideEditor> {
                         ? "Preview"
                         : _slideTextController.text,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: _selectedTextColor,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -187,7 +255,11 @@ class _SlideEditorState extends State<SlideEditor> {
           padding: const EdgeInsets.only(top: 5, bottom: 12),
           child: ElevatedButton(
             onPressed: () {
-              widget.onSave(_slideTextController.text, _selectedBackground);
+              final encodedText = encodeSlideText(
+                _slideTextController.text,
+                _selectedTextColor,
+              );
+              widget.onSave(encodedText, _selectedBackground);
             },
             child: const Text("Save Slide"),
           ),
