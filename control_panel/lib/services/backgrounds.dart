@@ -72,11 +72,17 @@ class BackgroundsService {
           ],
           "image": [],
         };
+        if (!await _bgsFile.parent.exists()) {
+          await _bgsFile.parent.create(recursive: true);
+        }
 
         await _bgsFile.writeAsString(jsonEncode(defaultData));
       }
 
       if (!await _custombgsFile.exists()) {
+        if (!await _custombgsFile.parent.exists()) {
+          await _custombgsFile.parent.create(recursive: true);
+        }
         await _custombgsFile.writeAsString(
           jsonEncode({"custom_backgrounds": []}),
         );
