@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 class BackgroundsService {
   final File _bgsFile = File(slide_backgrounds_json);
+  final File _custombgsFile = File(custom_slides_backgrounds_json);
 
   List<String> solidColorNames = [];
   List<String> imagePaths = [];
@@ -32,12 +33,12 @@ class BackgroundsService {
   // Convert a color name or hex code string to a Color object
   static Color stringToColor(String value) {
     final cleaned = value.trim().toLowerCase();
-    
+
     // Check in colorMap
     if (colorMap.containsKey(cleaned)) {
       return colorMap[cleaned]!;
     }
-    
+
     // Check if it's a hex code
     try {
       String hex = cleaned.replaceFirst("#", "");
@@ -55,7 +56,6 @@ class BackgroundsService {
   Future<void> loadBackgrounds() async {
     try {
       if (!await _bgsFile.exists()) {
-        // Create a default backgrounds file with sample data if it doesn't exist
         final defaultData = {
           "solid": [
             "Blue",
@@ -70,33 +70,65 @@ class BackgroundsService {
             "Teal",
             "Indigo",
           ],
-          "image": []
+          "image": [],
         };
+
         await _bgsFile.writeAsString(jsonEncode(defaultData));
       }
 
-      final content = await _bgsFile.readAsString();
-      _parseContent(content);
+      if (!await _custombgsFile.exists()) {
+        await _custombgsFile.writeAsString(
+          jsonEncode({"custom_backgrounds": []}),
+        );
+      }
+
+      solidColorNames.clear();
+      imagePaths.clear();
+
+      // Load built-in backgrounds
+      final builtIn =
+          jsonDecode(await _bgsFile.readAsString()) as Map<String, dynamic>;
+
+      if (builtIn["solid"] is List) {
+        solidColorNames = List<String>.from(builtIn["solid"]);
+      }
+
+      if (builtIn["image"] is List) {
+        imagePaths.addAll(List<String>.from(builtIn["image"]));
+      }
+
+      // Load custom backgrounds
+      final custom =
+          jsonDecode(await _custombgsFile.readAsString())
+              as Map<String, dynamic>;
+
+      if (custom["custom_backgrounds"] is List) {
+        imagePaths.addAll(List<String>.from(custom["custom_backgrounds"]));
+      }
     } catch (e) {
       print("Error loading backgrounds: $e");
-      // Fallback defaults
+
       solidColorNames = ["Blue", "Red", "Green", "Black", "Purple", "Orange"];
-      imagePaths = ["C:/Users/kenka/images/image1.jpg", "C:/Users/kenka/images/image2.jpg"];
+
+      imagePaths = [];
     }
   }
 
-  void _parseContent(String content) {
-    solidColorNames.clear();
-    imagePaths.clear();
+//   void _parseContent(String content) {
+//     solidColorNames.clear();
+//     imagePaths.clear();
 
-    final data = jsonDecode(content);
-    if (data is Map) {
-      if (data["solid"] is List) {
-        solidColorNames = List<String>.from(data["solid"]);
-      }
-      if (data["image"] is List) {
-        imagePaths = List<String>.from(data["image"]);
-      }
-    }
-  }
+//     final data = jsonDecode(content);
+//     if (data is Map) {
+//       if (data["solid"] is List) {
+//         solidColorNames = List<String>.from(data["solid"]);
+//       }
+//       if (data["image"] is List) {
+//         imagePaths = List<String>.from(data["image"]);
+//       }
+//       if (data["custom_backgrounds"] is List) {
+//         imagePaths = List<String>.from(data["custom_backgrounds"]);
+//       }
+//     }
+//   }
 }

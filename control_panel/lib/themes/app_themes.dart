@@ -73,6 +73,25 @@ class AppColors {
   static const Color darkOnSurface = Color(0xFFE6F0E6);
   static const Color darkOnBackground = Color(0xFFDCEFDC);
   static const Color darkOutline = Color(0xFF4A6A4A);
+
+  // ── List-tile title / subtitle (auto derived per theme) ───
+  static const Color lightListTitle = Color(0xFF12300F); // deep green-black
+  static const Color lightListSubtitle = grey600;
+  static const Color darkListTitle = Color(0xFFE9F6E6); // near-white green
+  static const Color darkListSubtitle = Color(0xFFA0BBA0);
+
+  // ── Data-table row / column colours ───────────────────────
+  static const Color lightTableHeader = primaryExtraLight;
+  static const Color lightTableHeaderText = primaryDeep;
+  static const Color lightRowEven = lightSurface;
+  static const Color lightRowOdd = Color(0xFFF1F8F1);
+  static const Color lightRowSelected = Color(0xFFD8F0D8);
+
+  static const Color darkTableHeader = darkSurfaceVariant;
+  static const Color darkTableHeaderText = primaryExtraLight;
+  static const Color darkRowEven = darkSurface;
+  static const Color darkRowOdd = Color(0xFF1F2F1F);
+  static const Color darkRowSelected = Color(0xFF2A4A2A);
 }
 
 // ----------------------------------------------------------------
@@ -172,6 +191,91 @@ class AppThemes {
       ),
     );
   }
+
+  // ── Shared list-tile theme builder ───────────────────────
+  // Sets title/subtitle/leading-trailing text styles automatically,
+  // instead of relying only on the flat `textColor` property.
+  static ListTileThemeData _listTileTheme({
+    required Color titleColor,
+    required Color subtitleColor,
+    required Color iconColor,
+    required Color selectedColor,
+    required Color selectedTileColor,
+  }) {
+    return ListTileThemeData(
+      tileColor: Colors.transparent,
+      selectedTileColor: selectedTileColor,
+      selectedColor: selectedColor,
+      iconColor: iconColor,
+      textColor: titleColor,
+      titleTextStyle: TextStyle(
+        color: titleColor,
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+      ),
+      subtitleTextStyle: TextStyle(
+        color: subtitleColor,
+        fontSize: 13,
+        fontWeight: FontWeight.w400,
+      ),
+      leadingAndTrailingTextStyle: TextStyle(
+        color: subtitleColor,
+        fontSize: 12,
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      minLeadingWidth: 24,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(8)),
+      ),
+    );
+  }
+
+  // ── Shared data-table theme builder ──────────────────────
+  // Auto-colours the header row (columns) and alternating data rows.
+  static DataTableThemeData _dataTableTheme({
+    required Color headerColor,
+    required Color headerTextColor,
+    required Color rowEven,
+    required Color rowOdd,
+    required Color rowSelected,
+    required Color dataTextColor,
+    required Color dividerColor,
+  }) {
+    return DataTableThemeData(
+      headingRowColor: WidgetStateProperty.all(headerColor),
+      headingTextStyle: TextStyle(
+        color: headerTextColor,
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.2,
+      ),
+      headingRowHeight: 48,
+      dataRowMinHeight: 44,
+      dataRowMaxHeight: 52,
+      dataRowColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) return rowSelected;
+        // Alternate row shading is applied by index in the widget layer
+        // (DataTable doesn't expose row index here), so this supplies the
+        // default/even colour; pass `rowOdd` explicitly per-row if needed.
+        return rowEven;
+      }),
+      dataTextStyle: TextStyle(color: dataTextColor, fontSize: 13),
+      dividerThickness: 1,
+      columnSpacing: 24,
+      horizontalMargin: 16,
+      decoration: BoxDecoration(
+        border: Border.all(color: dividerColor, width: 1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+    );
+  }
+
+  // Helper for widgets that build their own alternating rows:
+  //   color: index.isEven ? AppThemes.lightTableRowEven : AppThemes.lightTableRowOdd
+  static const Color lightTableRowEven = AppColors.lightRowEven;
+  static const Color lightTableRowOdd = AppColors.lightRowOdd;
+  static const Color darkTableRowEven = AppColors.darkRowEven;
+  static const Color darkTableRowOdd = AppColors.darkRowOdd;
 
   // ================================================================
   //  LIGHT THEME
@@ -524,18 +628,24 @@ class AppThemes {
         circularTrackColor: AppColors.primaryExtraLight,
       ),
 
-      // ── List tile ─────────────────────────────────────────
-      listTileTheme: const ListTileThemeData(
-        tileColor: Colors.transparent,
-        selectedTileColor: AppColors.primaryExtraLight,
-        selectedColor: AppColors.primaryDark,
+      // ── List tile (auto title/subtitle colours) ───────────
+      listTileTheme: _listTileTheme(
+        titleColor: AppColors.lightListTitle,
+        subtitleColor: AppColors.lightListSubtitle,
         iconColor: AppColors.grey600,
-        textColor: AppColors.lightOnSurface,
-        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        minLeadingWidth: 24,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(8)),
-        ),
+        selectedColor: AppColors.primaryDark,
+        selectedTileColor: AppColors.primaryExtraLight,
+      ),
+
+      // ── Data table (auto column/row colours) ──────────────
+      dataTableTheme: _dataTableTheme(
+        headerColor: AppColors.lightTableHeader,
+        headerTextColor: AppColors.lightTableHeaderText,
+        rowEven: AppColors.lightRowEven,
+        rowOdd: AppColors.lightRowOdd,
+        rowSelected: AppColors.lightRowSelected,
+        dataTextColor: AppColors.lightOnSurface,
+        dividerColor: AppColors.grey200,
       ),
 
       // ── Icons ─────────────────────────────────────────────
@@ -585,9 +695,7 @@ class AppThemes {
 
       // ── Search bar ────────────────────────────────────────
       searchBarTheme: SearchBarThemeData(
-        backgroundColor: WidgetStateProperty.all(
-          AppColors.lightSurfaceVariant,
-        ),
+        backgroundColor: WidgetStateProperty.all(AppColors.lightSurfaceVariant),
         elevation: WidgetStateProperty.all(0),
         hintStyle: WidgetStateProperty.all(
           const TextStyle(color: AppColors.grey500),
@@ -910,7 +1018,6 @@ class AppThemes {
 
       // ── Switch ────────────────────────────────────────────
       switchTheme: SwitchThemeData(
-        // MaterialStateProperty deprecated -> use WidgetStateProperty
         thumbColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
             return AppColors.primaryLight;
@@ -927,7 +1034,6 @@ class AppThemes {
 
       // ── Checkbox ──────────────────────────────────────────
       checkboxTheme: CheckboxThemeData(
-        // Checkbox theme - replace deprecated MaterialStateProperty
         fillColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
             return AppColors.primaryLight;
@@ -941,7 +1047,6 @@ class AppThemes {
 
       // ── Radio ─────────────────────────────────────────────
       radioTheme: RadioThemeData(
-        // Radio theme - replace deprecated MaterialStateProperty
         fillColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
             return AppColors.primaryLight;
@@ -983,18 +1088,24 @@ class AppThemes {
         circularTrackColor: AppColors.primaryDark,
       ),
 
-      // ── List tile ─────────────────────────────────────────
-      listTileTheme: ListTileThemeData(
-        tileColor: Colors.transparent,
-        selectedTileColor: AppColors.primaryDark.withOpacity(0.45),
-        selectedColor: AppColors.primaryLight,
+      // ── List tile (auto title/subtitle colours) ───────────
+      listTileTheme: _listTileTheme(
+        titleColor: AppColors.darkListTitle,
+        subtitleColor: AppColors.darkListSubtitle,
         iconColor: AppColors.grey400,
-        textColor: AppColors.darkOnSurface,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        minLeadingWidth: 24,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(8)),
-        ),
+        selectedColor: AppColors.primaryLight,
+        selectedTileColor: AppColors.primaryDark.withOpacity(0.45),
+      ),
+
+      // ── Data table (auto column/row colours) ──────────────
+      dataTableTheme: _dataTableTheme(
+        headerColor: AppColors.darkTableHeader,
+        headerTextColor: AppColors.darkTableHeaderText,
+        rowEven: AppColors.darkRowEven,
+        rowOdd: AppColors.darkRowOdd,
+        rowSelected: AppColors.darkRowSelected,
+        dataTextColor: AppColors.darkOnSurface,
+        dividerColor: AppColors.darkSurfaceVariant,
       ),
 
       // ── Icons ─────────────────────────────────────────────
@@ -1050,9 +1161,7 @@ class AppThemes {
 
       // ── Search bar ────────────────────────────────────────
       searchBarTheme: SearchBarThemeData(
-        backgroundColor: WidgetStateProperty.all(
-          AppColors.darkSurfaceVariant,
-        ),
+        backgroundColor: WidgetStateProperty.all(AppColors.darkSurfaceVariant),
         elevation: WidgetStateProperty.all(0),
         hintStyle: WidgetStateProperty.all(
           const TextStyle(color: AppColors.grey500),

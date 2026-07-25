@@ -1,3 +1,5 @@
+import 'package:control_pannel/screens/settings/upload_custom_backgrounds.dart';
+import 'package:control_pannel/screens/settings/settings.dart';
 import 'package:control_pannel/themes/app_themes.dart';
 import 'package:flutter/material.dart';
 
@@ -25,7 +27,9 @@ class MyApp extends StatelessWidget {
       routes: {
         '/' : (context) => Home(),
         '/AddDisplay':(context) => AddMedia(),
-        '/Music': (context) => MusicPage()
+        '/Music': (context) => MusicPage(),
+        '/settings':(context)=> SettingsPage(),
+        '/custom-background-upload': (context) => CustomBackgroundUploadPage(),
       },
       initialRoute: '/',
       debugShowCheckedModeBanner: false,
