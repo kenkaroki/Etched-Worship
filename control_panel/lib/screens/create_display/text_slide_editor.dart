@@ -35,7 +35,6 @@ class TextSlideEditor extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ── Section label ──────────────────────────────────────────────
         Text(
           "Slide Text",
           style: TextStyle(
@@ -46,7 +45,6 @@ class TextSlideEditor extends StatelessWidget {
         ),
         const SizedBox(height: 8),
 
-        // ── Text input ─────────────────────────────────────────────────
         TextField(
           controller: controller,
           maxLength: 400,
@@ -58,7 +56,6 @@ class TextSlideEditor extends StatelessWidget {
         ),
         const SizedBox(height: 12),
 
-        // ── Text Color Selector ─────────────────────────────────────────
         Text(
           "Text Color",
           style: TextStyle(
@@ -114,7 +111,6 @@ class TextSlideEditor extends StatelessWidget {
 
         const Spacer(),
 
-        // ── Add button ─────────────────────────────────────────────────
         SizedBox(
           width: double.infinity,
           child: ElevatedButton.icon(

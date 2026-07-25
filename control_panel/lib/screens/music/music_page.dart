@@ -110,11 +110,13 @@ class _MusicPageState extends State<MusicPage> {
 
     for (final slide in slides) {
       final text = (slide["text"] ?? "").toString();
+      debugPrint(text.split("<||COLOR")[0]);
+      final title_text = text.split("<||COLOR")[0];
       QueueManager.addSlide(
         folderName,
         SlideItem(
-          title: text
-              .substring(0, text.length > 5 ? 10 : text.length)
+          title: title_text
+              .substring(0, title_text.length > 5 ? 10 : title_text.length)
               .padRight(3, '.....'),
           content: "lyrics:$text",
           background: slide["background"] ?? "color:#cccccc",

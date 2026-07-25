@@ -86,10 +86,17 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     List contentSplits = content.split(':');
     if (contentSplits[0].toLowerCase() == 'text' ||
         contentSplits[0].toLowerCase() == 'lyrics') {
-      stackContentFormart = "Text:${content.split('text:')[1]}".replaceAll(
-        '\n',
-        "<|!&%&!|>",
-      );
+      if (contentSplits[0].toLowerCase() == 'lyrics') {
+        stackContentFormart = "Text:${content.split('lyrics:')[1]}".replaceAll(
+          '\n',
+          "<|!&%&!|>",
+        );
+      } else {
+        stackContentFormart = "Text:${content.split('text:')[1]}".replaceAll(
+          '\n',
+          "<|!&%&!|>",
+        );
+      }
     } else if (contentSplits[0].toLowerCase() == 'image') {
       stackContentFormart = "Image:${content.split("image:")[1]}";
       stackContentFormart = stackContentFormart.replaceAll('\\', '/');
@@ -266,9 +273,14 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     }
 
     // Extract text payload
-    String rawText = content.toLowerCase().startsWith('text:')
-        ? content.substring(5).trim()
-        : content;
+    String rawText = "";
+    if (content.toLowerCase().startsWith('text:')) {
+      rawText = content.substring(5).trim();
+    } else if (content.toLowerCase().startsWith('lyrics:')) {
+      rawText = content.substring(7).trim();
+    } else {
+      rawText = content;
+    }
 
     Color textColor = Colors.white;
 
