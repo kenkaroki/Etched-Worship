@@ -525,16 +525,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                                 ),
                               ),
                             ),
-                            const Spacer(),
-                            IconButton(
-                              icon: const Icon(
-                                Icons.settings,
-                                color: Colors.white,
-                              ),
-                              tooltip: "Settings",
-                              onPressed: () =>
-                                  Navigator.pushNamed(context, '/settings'),
-                            ),
+                            Spacer(),
                             const SizedBox(width: 8),
                             ElevatedButton.icon(
                               onPressed: _showCreateQueueDialog,
