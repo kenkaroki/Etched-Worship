@@ -229,7 +229,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
       );
     }
 
-    return Container(color: Colors.black);
+    return Container(color: Colors.white);
   }
 
   // ================= HELPER: COLOR PARSER =================
