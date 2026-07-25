@@ -17,11 +17,7 @@ Color hexToColor(String hex) {
 }
 
 String colorToHex(Color color) {
-  return color.value
-      .toRadixString(16)
-      .padLeft(8, '0')
-      .substring(2)
-      .toUpperCase();
+  return '#${(color.value & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}';
 }
 
 class AddMedia extends StatefulWidget {
@@ -496,7 +492,7 @@ class _SaveDialogState extends State<SaveDialog> {
 
     if (widget.slideType == "text") {
       final hexColor = colorToHex(widget.textColor);
-      final formattedContent = "text:${widget.text}<||COLOR:$hexColor||>";
+      final formattedContent = "text:${widget.text}<|$hexColor|>";
 
       QueueManager.addSlide(
         selectedQueue!,
