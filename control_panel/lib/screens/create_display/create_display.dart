@@ -490,9 +490,9 @@ class _SaveDialogState extends State<SaveDialog> {
   void save() {
     if (selectedQueue == null) return;
 
-    if (widget.slideType == "text") {
+   if (widget.slideType == "text") {
       final hexColor = colorToHex(widget.textColor);
-      final formattedContent = "text:${widget.text}<|$hexColor|>";
+      final formattedContent = "text:${widget.text}<||COLOR:$hexColor||>";
 
       QueueManager.addSlide(
         selectedQueue!,

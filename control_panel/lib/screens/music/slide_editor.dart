@@ -2,12 +2,22 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:control_pannel/services/backgrounds.dart';
-import 'slide_view.dart'; // import buildBackground, encodeSlideText
+import 'slide_view.dart'; // import buildBackground, encodeSlideText, decodeSlideText
 
 class SlideEditor extends StatefulWidget {
   final Function(String text, String? background) onSave;
 
-  const SlideEditor({super.key, required this.onSave});
+  /// When editing an existing slide, pass its raw stored text
+  /// (still containing the "<||COLOR: #rrggbb||>" tag) and background.
+  final String? initialText;
+  final String? initialBackground;
+
+  const SlideEditor({
+    super.key,
+    required this.onSave,
+    this.initialText,
+    this.initialBackground,
+  });
 
   @override
   State<SlideEditor> createState() => _SlideEditorState();
@@ -21,6 +31,8 @@ class _SlideEditorState extends State<SlideEditor> {
   final BackgroundsService _backgroundsService = BackgroundsService();
   List<Color> bgColors = [];
   List<String> bgImages = [];
+
+  bool get _isEditing => widget.initialText != null;
 
   // Palette of quick-pick text colors.
   static const List<Color> _textColorOptions = [
@@ -37,6 +49,14 @@ class _SlideEditorState extends State<SlideEditor> {
   @override
   void initState() {
     super.initState();
+
+    if (widget.initialText != null) {
+      final decoded = decodeSlideText(widget.initialText!);
+      _slideTextController.text = decoded.text;
+      _selectedTextColor = decoded.color;
+    }
+    _selectedBackground = widget.initialBackground;
+
     _loadBackgrounds();
   }
 
@@ -62,11 +82,11 @@ class _SlideEditorState extends State<SlideEditor> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        const Padding(
-          padding: EdgeInsets.all(8.0),
+        Padding(
+          padding: const EdgeInsets.all(8.0),
           child: Text(
-            "Create Slide",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            _isEditing ? "Edit Slide" : "Create Slide",
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
         ),
 
@@ -159,6 +179,8 @@ class _SlideEditorState extends State<SlideEditor> {
                         children: bgColors.map((c) {
                           final hex =
                               "#${c.value.toRadixString(16).substring(2)}";
+                          final isSelected =
+                              _selectedBackground == "color:$hex";
 
                           return GestureDetector(
                             onTap: () {
@@ -171,7 +193,12 @@ class _SlideEditorState extends State<SlideEditor> {
                               height: 55,
                               decoration: BoxDecoration(
                                 color: c,
-                                border: Border.all(color: Colors.black26),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? Colors.blueAccent
+                                      : Colors.black26,
+                                  width: isSelected ? 3 : 1,
+                                ),
                               ),
                             ),
                           );
@@ -192,6 +219,9 @@ class _SlideEditorState extends State<SlideEditor> {
                         spacing: 10,
                         runSpacing: 10,
                         children: bgImages.map((img) {
+                          final isSelected =
+                              _selectedBackground == "image:$img";
+
                           return GestureDetector(
                             onTap: () {
                               setState(() {
@@ -203,7 +233,12 @@ class _SlideEditorState extends State<SlideEditor> {
                               height: 60,
                               clipBehavior: Clip.hardEdge,
                               decoration: BoxDecoration(
-                                border: Border.all(color: Colors.black26),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? Colors.blueAccent
+                                      : Colors.black26,
+                                  width: isSelected ? 3 : 1,
+                                ),
                               ),
                               child: Image.file(File(img), fit: BoxFit.cover),
                             ),
@@ -261,7 +296,7 @@ class _SlideEditorState extends State<SlideEditor> {
               );
               widget.onSave(encodedText, _selectedBackground);
             },
-            child: const Text("Save Slide"),
+            child: Text(_isEditing ? "Update Slide" : "Save Slide"),
           ),
         ),
       ],
