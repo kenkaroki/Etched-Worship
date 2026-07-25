@@ -21,6 +21,10 @@ class _MusicPageState extends State<MusicPage> {
 
   bool creatingSlide = false;
 
+  // Tracks which slide is being edited (null when creating a new one).
+  int? _editingSlideIndex;
+  Map<String, dynamic>? _editingSlide;
+
   @override
   void initState() {
     super.initState();
@@ -131,6 +135,8 @@ class _MusicPageState extends State<MusicPage> {
     setState(() {
       if (creatingSlide) {
         creatingSlide = false;
+        _editingSlideIndex = null;
+        _editingSlide = null;
       } else {
         currentFolder = null;
       }
@@ -140,6 +146,16 @@ class _MusicPageState extends State<MusicPage> {
   void _addSlide() {
     setState(() {
       creatingSlide = true;
+      _editingSlideIndex = null;
+      _editingSlide = null;
+    });
+  }
+
+  void _editSlide(int index, Map<String, dynamic> slide) {
+    setState(() {
+      creatingSlide = true;
+      _editingSlideIndex = index;
+      _editingSlide = slide;
     });
   }
 
@@ -150,15 +166,46 @@ class _MusicPageState extends State<MusicPage> {
       currentFolder!["slides"] ?? [],
     );
 
-    slides.add({
-      "id": slides.length + 1,
-      "text": text,
-      "background": background ?? "color:#cccccc",
-    });
+    if (_editingSlideIndex != null &&
+        _editingSlideIndex! >= 0 &&
+        _editingSlideIndex! < slides.length) {
+      // Update existing slide in place, preserving its id.
+      final existing = slides[_editingSlideIndex!];
+      slides[_editingSlideIndex!] = {
+        ...existing,
+        "text": text,
+        "background": background ?? "color:#cccccc",
+      };
+    } else {
+      slides.add({
+        "id": slides.length + 1,
+        "text": text,
+        "background": background ?? "color:#cccccc",
+      });
+    }
 
     setState(() {
       currentFolder!["slides"] = slides;
       creatingSlide = false;
+      _editingSlideIndex = null;
+      _editingSlide = null;
+    });
+
+    await _musicService.saveData(folders);
+  }
+
+  void _deleteSlide(int index) async {
+    if (currentFolder == null) return;
+
+    final slides = List<Map<String, dynamic>>.from(
+      currentFolder!["slides"] ?? [],
+    );
+
+    if (index < 0 || index >= slides.length) return;
+
+    setState(() {
+      slides.removeAt(index);
+      currentFolder!["slides"] = slides;
     });
 
     await _musicService.saveData(folders);
@@ -201,10 +248,16 @@ class _MusicPageState extends State<MusicPage> {
               onCreateSongQueue: (folder) => _createSongQueue(folder),
             )
           : (creatingSlide
-                ? SlideEditor(onSave: _saveSlide)
+                ? SlideEditor(
+                    onSave: _saveSlide,
+                    initialText: _editingSlide?["text"] as String?,
+                    initialBackground: _editingSlide?["background"] as String?,
+                  )
                 : SlideView(
                     slides: currentFolder!["slides"] ?? [],
                     onAddSlide: _addSlide,
+                    onEditSlide: _editSlide,
+                    onDeleteSlide: _deleteSlide,
                   )),
     );
   }
