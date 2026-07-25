@@ -56,13 +56,16 @@ class InstallerApp(ctk.CTk):
 
     def get_default_install_dir(self):
         home = os.path.expanduser("~")
+
         if platform.system() == "Windows":
-            return os.path.join(os.environ.get("ProgramFiles", "C:\\Program Files"))
+            return r"C:\\"
         elif platform.system() == "Darwin":
-            return os.path.join("/Applications")
-        return os.path.join(home)
+            return os.path.join(home, "Applications")
+        else:  # Linux and other Unix-like systems
+            return home
 
     def show_page(self, index):
+        
         if self.current_page: self.current_page.destroy()
         self.current_page_index = index
         self.current_page = self.pages[index](self)

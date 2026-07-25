@@ -125,7 +125,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
         "Default Queue",
         SlideItem(
           title: "Etched Worship",
-          content: "text:Etched Worship",
+          content: "text:Etched Worship<||COLOR:#50C878||>",
           background: "color:#000000",
         ),
       );
