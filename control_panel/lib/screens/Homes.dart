@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:control_pannel/screens/Bible/bible.dart';
 import 'package:control_pannel/screens/create_display/create_display.dart';
+import 'package:control_pannel/screens/defaultLftPanel/defaultleftpanelscreen.dart';
 import 'package:control_pannel/screens/music/music_page.dart';
 import 'package:control_pannel/services/stack_controller.dart';
 import 'package:control_pannel/themes/app_themes.dart'; // AppColors lives here
@@ -430,23 +431,8 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     if (_activeLeftPanelMode == 'music') return const MusicPage();
     if (_activeLeftPanelMode == 'Bible') return const BibleReaderPage();
 
-    // 'home' mode and the default fallback share the same splash screen
-    return SizedBox(
-      width: double.infinity,
-
-      // Subtle light-green surface keeps the panel on-theme without being loud
-      child: Center(
-        child: Text(
-          "Etched Worship",
-          style: TextStyle(
-            fontSize: 48,
-            // Primary green makes the brand name stand out
-            color: AppColors.primary,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
+    // 'home' mode and the default fallback share the dashboard widget
+    return const HomeDashboard();
   }
 
   // ================= MAIN BUILD =================
@@ -540,6 +526,16 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                               ),
                             ),
                             const Spacer(),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.settings,
+                                color: Colors.white,
+                              ),
+                              tooltip: "Settings",
+                              onPressed: () =>
+                                  Navigator.pushNamed(context, '/settings'),
+                            ),
+                            const SizedBox(width: 8),
                             ElevatedButton.icon(
                               onPressed: _showCreateQueueDialog,
                               icon: const Icon(Icons.add),
