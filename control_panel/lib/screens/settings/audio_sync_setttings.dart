@@ -83,7 +83,7 @@ class _AudioSyncSettingsPageState extends State<AudioSyncSettingsPage> {
             "microphone continuously while a queue is synced, only enable "
             "it when you intend to use it during a service.\n\n"
             "The first time you turn this on, a one-time download "
-            "(~150MB) of the speech engine and model is required. After "
+            "(~500MB) of the speech engine and model is required. After "
             "that it works fully offline.",
             style: TextStyle(
               fontSize: 14,
