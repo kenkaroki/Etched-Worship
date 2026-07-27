@@ -37,3 +37,8 @@ final sync_dependacies_path = p.join(
   'packagefiles',
   'Synchronizations',
 );
+/// Base path without extension.
+final canvas_path = p.join(exeDir, '..', 'canvas', 'canvas');
+
+/// Platform-specific executable.
+final canvasExecutable = Platform.isWindows ? '$canvas_path.exe' : canvas_path;
