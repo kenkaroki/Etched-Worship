@@ -84,7 +84,9 @@ class _AudioSyncSettingsPageState extends State<AudioSyncSettingsPage> {
             "it when you intend to use it during a service.\n\n"
             "The first time you turn this on, a one-time download "
             "(~500MB) of the speech engine and model is required. After "
-            "that it works fully offline.",
+            "that it works fully offline."
+            ""
+            "NOTE: This feature is still in beta mode",
             style: TextStyle(
               fontSize: 14,
               height: 1.5,
