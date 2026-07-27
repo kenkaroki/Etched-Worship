@@ -20,6 +20,18 @@ class SettingsPage extends StatelessWidget {
               Navigator.of(context).pushNamed('/custom-background-upload');
             },
           ),
+          ListTile(
+            leading: const Icon(Icons.sync_alt),
+            title: const Text('Audio Synchronization'),
+            subtitle: const Text(
+              'Synchronize current slide with live audio feed',
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.of(context).pushNamed('/audio-sync-settings');
+            },
+          ),
+
           // Add more settings tiles below as needed
         ],
       ),
