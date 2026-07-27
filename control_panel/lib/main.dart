@@ -1,3 +1,4 @@
+import 'package:control_pannel/screens/settings/audio_sync_setttings.dart';
 import 'package:control_pannel/screens/settings/upload_custom_backgrounds.dart';
 import 'package:control_pannel/screens/settings/settings.dart';
 import 'package:control_pannel/themes/app_themes.dart';
@@ -30,6 +31,7 @@ class MyApp extends StatelessWidget {
         '/Music': (context) => MusicPage(),
         '/settings':(context)=> SettingsPage(),
         '/custom-background-upload': (context) => CustomBackgroundUploadPage(),
+        '/audio-sync-settings': (context) => AudioSyncSettingsPage(),
       },
       initialRoute: '/',
       debugShowCheckedModeBanner: false,

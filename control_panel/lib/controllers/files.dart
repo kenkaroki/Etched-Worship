@@ -31,3 +31,9 @@ final custom_slides_backgrounds_json = p.join(
   'custom-backgrounds',
   'slide_backgrounds.ecw.bgs.json',
 );
+final sync_dependacies_path = p.join(
+  exeDir,
+  '..',
+  'packagefiles',
+  'Synchronizations',
+);

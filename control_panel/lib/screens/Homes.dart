@@ -3,8 +3,10 @@ import 'package:control_pannel/screens/Bible/bible.dart';
 import 'package:control_pannel/screens/create_display/create_display.dart';
 import 'package:control_pannel/screens/defaultLftPanel/defaultleftpanelscreen.dart';
 import 'package:control_pannel/screens/music/music_page.dart';
+import 'package:control_pannel/services/audio_sync_settings_service.dart';
 import 'package:control_pannel/services/stack_controller.dart';
-import 'package:control_pannel/themes/app_themes.dart'; // AppColors lives here
+import 'package:control_pannel/services/syncronizer.dart';
+import 'package:control_pannel/themes/app_themes.dart';
 import 'package:flutter/material.dart';
 import 'package:control_pannel/services/queue_manager.dart';
 import 'package:control_pannel/models/queue_models.dart';
@@ -19,12 +21,13 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> with TickerProviderStateMixin {
   TabController? _tabController;
 
-  // Tracks the currently active (jumped-to) slide
   String? _activeQueueName;
   int _activeSlideIndex = -1;
 
-  // Tracks what to show in the main content area of the LEFT panel
   String? _activeLeftPanelMode;
+
+  WhisperSlideSyncService? _slideSync;
+  String? _syncQueueName;
 
   List<String> get queueNames => QueueManager.queues.keys.toList();
 
@@ -49,10 +52,16 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     });
   }
 
-  // ================= QUEUE CHANGED =================
-
   void _onQueueChanged() {
     _refreshControllerAfterFrame();
+  }
+
+  void _onAudioSyncSettingChanged() {
+    if (!AudioSyncSettingsService.isEnabled) {
+      if (_syncQueueName != null) _stopSync();
+      _slideSync = null;
+    }
+    setState(() {});
   }
 
   // ================= QUEUE ACTIONS =================
@@ -105,12 +114,110 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
       stackContentFormart = "";
     }
 
-    print(stackContentFormart);
-
     String Background = Activeslide?.background.trim() ?? '';
     String stackFormart = "$stackContentFormart|||Background:$Background";
 
     write_to_stack(stackFormart);
+  }
+
+  // ================= VOICE SYNC ACTIONS =================
+
+  String _extractSyncText(SlideItem item) {
+    String content = item.content.trim();
+    List contentSplits = content.split(':');
+    String prefix = contentSplits.isNotEmpty
+        ? contentSplits[0].toLowerCase()
+        : '';
+
+    String rawText;
+    if (prefix == 'lyrics') {
+      rawText = content.split('lyrics:').length > 1
+          ? content.split('lyrics:')[1]
+          : '';
+    } else if (prefix == 'text') {
+      rawText = content.split('text:').length > 1
+          ? content.split('text:')[1]
+          : '';
+    } else {
+      rawText = item
+          .title; // Fallback to slide title if text/lyrics format isn't explicit
+    }
+
+    final colorRegex = RegExp(r'<\|\|COLOR:(.*?)\|\|>');
+    rawText = rawText.replaceAll(colorRegex, '').trim();
+
+    return rawText;
+  }
+
+  Future<WhisperSlideSyncService> _getOrCreateSlideSync() async {
+    if (_slideSync != null) return _slideSync!;
+
+    final binaryPath = await AudioSyncSettingsService.resolveBinaryPath();
+    final modelFile = await AudioSyncSettingsService.modelFile;
+
+    _slideSync = WhisperSlideSyncService(
+      whisperBinaryPath: binaryPath,
+      modelPath: modelFile.path,
+    );
+    return _slideSync!;
+  }
+
+  Future<void> _startSyncForQueue(String queueName) async {
+    final queue = QueueManager.queues[queueName] ?? [];
+    final slides = queue.map(_extractSyncText).toList();
+
+    setState(() => _syncQueueName = queueName);
+
+    try {
+      final sync = await _getOrCreateSlideSync();
+
+      await sync.start(
+        slides: slides,
+        onSlideChanged: (index, confidence) {
+          if (_syncQueueName == queueName) {
+            print(
+              "[Sync:$queueName] Instantly activating Slide $index (Confidence: $confidence)",
+            );
+            _jumpToSlide(queueName, index);
+          }
+        },
+        onHeard: (heardText) {
+          print("[Sync:$queueName] Heard: \"$heardText\"");
+        },
+      );
+    } catch (e) {
+      print("Failed to start slide sync: $e");
+      if (mounted) {
+        setState(() {
+          if (_syncQueueName == queueName) _syncQueueName = null;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Couldn't start voice sync: $e")),
+        );
+      }
+    }
+  }
+
+  void _stopSync() {
+    _slideSync?.stop();
+    setState(() => _syncQueueName = null);
+  }
+
+  void _onQueueSyncToggled(String queueName, bool? value) {
+    if (!AudioSyncSettingsService.isEnabled) return;
+
+    final enabled = value ?? false;
+
+    if (!enabled) {
+      if (_syncQueueName == queueName) _stopSync();
+      return;
+    }
+
+    if (_syncQueueName != null && _syncQueueName != queueName) {
+      _slideSync?.stop();
+    }
+
+    _startSyncForQueue(queueName);
   }
 
   // ================= INIT & DISPOSE =================
@@ -119,6 +226,9 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     QueueManager.notifier.addListener(_onQueueChanged);
+    AudioSyncSettingsService.enabledNotifier.addListener(
+      _onAudioSyncSettingChanged,
+    );
 
     if (QueueManager.queues.isEmpty) {
       QueueManager.createQueue("Default Queue");
@@ -143,7 +253,11 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    _slideSync?.stop();
     QueueManager.notifier.removeListener(_onQueueChanged);
+    AudioSyncSettingsService.enabledNotifier.removeListener(
+      _onAudioSyncSettingChanged,
+    );
     _tabController?.dispose();
     super.dispose();
   }
@@ -232,30 +346,24 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     return Container(color: Colors.white);
   }
 
-  // ================= HELPER: COLOR PARSER =================
-
   Color _parseTextColor(String rawColorString) {
     try {
       String clean = rawColorString.trim();
 
-      // Handle hex colors (#FFFFFF or FFFFFF or 0xFFFFFFFF)
       if (clean.contains('#')) {
         clean = clean.replaceAll('#', '');
         if (clean.length == 6) return Color(int.parse("0xFF$clean"));
         if (clean.length == 8) return Color(int.parse("0x$clean"));
       }
 
-      // Handle Flutter color value string format e.g. Color(0xff4caf50) or MaterialColor(primary value: Color(0xff4caf50))
       final valueMatch = RegExp(r'0x[0-9a-fA-F]+').firstMatch(clean);
       if (valueMatch != null) {
         return Color(int.parse(valueMatch.group(0)!));
       }
     } catch (_) {}
 
-    return Colors.white; // Default fallback
+    return Colors.white;
   }
-
-  // ================= SLIDE CONTENT RENDERER =================
 
   Widget _buildSlideContentWidget(SlideItem slide) {
     final content = slide.content.trim();
@@ -273,7 +381,6 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
       );
     }
 
-    // Extract text payload
     String rawText = "";
     if (content.toLowerCase().startsWith('text:')) {
       rawText = content.substring(5).trim();
@@ -285,7 +392,6 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
 
     Color textColor = Colors.white;
 
-    // Regex to match <||COLOR:<color_value>||>
     final colorRegex = RegExp(r'<\|\|COLOR:(.*?)\|\|>');
     final match = colorRegex.firstMatch(rawText);
 
@@ -294,7 +400,6 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
       if (colorString != null) {
         textColor = _parseTextColor(colorString);
       }
-      // Trim out the color markup tag from the visible text
       rawText = rawText.replaceAll(colorRegex, '').trim();
     }
 
@@ -324,11 +429,8 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     );
   }
 
-  // ================= MINI PREVIEW COMPONENT =================
-
   Widget _buildRightPanelLivePreview(SlideItem? slide, String currentTabName) {
     if (slide == null) {
-      // No active slide — show branded placeholder using primary dark green
       return Container(
         color: AppColors.primaryDark,
         child: const Center(
@@ -365,8 +467,6 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     );
   }
 
-  // ================= QUEUE ITEM =================
-
   Widget _buildQueueItem(String queueName, int index, SlideItem item) {
     final isActive =
         _activeQueueName == queueName && _activeSlideIndex == index;
@@ -374,7 +474,6 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     return GestureDetector(
       onTap: () => _jumpToSlide(queueName, index),
       child: Container(
-        // Active row gets a soft green tint; inactive rows are transparent
         color: isActive ? AppColors.primaryExtraLight : Colors.transparent,
         child: ListTile(
           leading: isActive
@@ -385,7 +484,6 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
             style: isActive
                 ? TextStyle(
                     fontWeight: FontWeight.bold,
-                    // Dark green text pops on the light-green active background
                     color: AppColors.primaryDark,
                   )
                 : TextStyle(color: AppColors.tertiary),
@@ -424,31 +522,58 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     );
   }
 
-  // ================= LEFT PANEL SWITCH ENGINE =================
+  Widget _buildSyncBanner(String queueName) {
+    final isSyncing = _syncQueueName == queueName;
+
+    return Container(
+      width: double.infinity,
+      color: isSyncing ? AppColors.primaryExtraLight : Colors.grey.shade200,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      child: Row(
+        children: [
+          Checkbox(
+            value: isSyncing,
+            activeColor: AppColors.primary,
+            onChanged: (value) => _onQueueSyncToggled(queueName, value),
+          ),
+          Icon(
+            isSyncing ? Icons.mic : Icons.mic_none,
+            size: 18,
+            color: isSyncing ? AppColors.primaryDark : Colors.grey.shade700,
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              isSyncing
+                  ? "Sync with AI — ON, listening for this queue"
+                  : "Sync with AI",
+              style: TextStyle(
+                fontWeight: isSyncing ? FontWeight.bold : FontWeight.normal,
+                color: isSyncing ? AppColors.primaryDark : Colors.grey.shade800,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildLeftPanelMainContent(TabController tab, SlideItem? slide) {
     if (_activeLeftPanelMode == 'new') return const AddMedia();
     if (_activeLeftPanelMode == 'music') return const MusicPage();
     if (_activeLeftPanelMode == 'Bible') return const BibleReaderPage();
 
-    // 'home' mode and the default fallback share the dashboard widget
     return const HomeDashboard();
   }
-
-  // ================= MAIN BUILD =================
 
   @override
   Widget build(BuildContext context) {
     final tab = _tabController;
     final slide = _activeSlide;
-    // Pull the live colour scheme so selected-tab indicators, dividers,
-    // and any Material widgets automatically adapt to light/dark mode.
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
-        // AppBar colours (green bg, white fg) come from AppBarTheme in
-        // AppThemes.lightTheme — no manual colour props needed here.
         leading: IconButton(
           icon: const Icon(Icons.home),
           onPressed: () {
@@ -462,15 +587,12 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
           ? const Center(child: Text("No Queues"))
           : Row(
               children: [
-                // ================= LEFT PANEL =================
                 Expanded(
                   flex: 3,
                   child: Column(
                     children: [
-                      // ── Top nav toolbar ──────────────────────
                       Container(
                         height: 60,
-                        // Solid primary green matches the AppBar
                         color: AppColors.primary,
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Row(
@@ -481,7 +603,6 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                               child: Text(
                                 "New",
                                 style: TextStyle(
-                                  // Extra-light green = selected; white = idle
                                   color: _activeLeftPanelMode == 'new'
                                       ? AppColors.primaryExtraLight
                                       : Colors.white,
@@ -526,7 +647,6 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                               ),
                             ),
                             Spacer(),
-                            const SizedBox(width: 8),
                             ElevatedButton.icon(
                               onPressed: _showCreateQueueDialog,
                               icon: const Icon(Icons.add),
@@ -539,8 +659,6 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                     ],
                   ),
                 ),
-
-                // ================= RIGHT PANEL =================
                 SizedBox(
                   width: 350,
                   child: Container(
@@ -551,7 +669,6 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                     ),
                     child: Column(
                       children: [
-                        // ── Live preview thumbnail ────────────────
                         Container(
                           height: 200,
                           width: double.infinity,
@@ -563,7 +680,6 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                           ),
                         ),
                         const SizedBox(height: 10),
-                        // ── Queue tabs ────────────────────────────
                         TabBar(
                           controller: tab,
                           isScrollable: true,
@@ -576,15 +692,23 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                             controller: tab,
                             children: queueNames.map((name) {
                               final queue = QueueManager.queues[name] ?? [];
-                              return ListView.builder(
-                                itemCount: queue.length,
-                                itemBuilder: (context, index) {
-                                  return _buildQueueItem(
-                                    name,
-                                    index,
-                                    queue[index],
-                                  );
-                                },
+                              return Column(
+                                children: [
+                                  if (AudioSyncSettingsService.isEnabled)
+                                    _buildSyncBanner(name),
+                                  Expanded(
+                                    child: ListView.builder(
+                                      itemCount: queue.length,
+                                      itemBuilder: (context, index) {
+                                        return _buildQueueItem(
+                                          name,
+                                          index,
+                                          queue[index],
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ],
                               );
                             }).toList(),
                           ),
