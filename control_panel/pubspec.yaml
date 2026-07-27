@@ -45,6 +45,7 @@ dependencies:
   shared_preferences: ^2.5.5
   record: ^6.2.1
   archive: ^4.0.9
+  window_manager: ^0.5.2
 
 dev_dependencies:
   flutter_test:

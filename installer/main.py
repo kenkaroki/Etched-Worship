@@ -170,7 +170,7 @@ class ProgressPage(ctk.CTkFrame):
                         self.update_status(f"{status_prefix}: {downloaded // 1024} KB received", percentage)
 
     def create_launcher_files(self, target_dir):
-        """Create platform-specific launcher scripts that open both canvas and control_panel."""
+        """Create platform-specific launcher scripts that open control_panel."""
         os_type = platform.system()
 
         if os_type == "Windows":
@@ -178,7 +178,6 @@ class ProgressPage(ctk.CTkFrame):
             bat_path = os.path.join(target_dir, "Etched Worship.bat")
             with open(bat_path, "w", newline="\r\n") as f:
                 f.write("@echo off\r\n")
-                f.write('start "" "%~dp0canvas\\canvas.exe"\r\n')
                 f.write('start "" "%~dp0control_panel\\control_pannel.exe"\r\n')
 
             # Silent VBScript wrapper — shortcut points here so no CMD window flashes
@@ -199,7 +198,6 @@ class ProgressPage(ctk.CTkFrame):
             with open(launcher_path, "w") as f:
                 f.write("#!/bin/bash\n")
                 f.write('DIR="$(cd "$(dirname "$0")" && pwd)"\n')
-                f.write('open "$DIR/canvas/canvas.app"\n')
                 f.write('open "$DIR/control_panel/control_pannel.app"\n')
             os.chmod(launcher_path, 0o755)
             return launcher_path
@@ -209,10 +207,38 @@ class ProgressPage(ctk.CTkFrame):
             with open(launcher_path, "w") as f:
                 f.write("#!/bin/bash\n")
                 f.write('DIR="$(cd "$(dirname "$0")" && pwd)"\n')
-                f.write('"$DIR/canvas/canvas" &\n')
                 f.write('"$DIR/control_panel/control_pannel" &\n')
             os.chmod(launcher_path, 0o755)
             return launcher_path
+
+    def create_uninstaller(self, target_dir):
+        """Create a Windows uninstall script that removes the registry entry and install folder."""
+        uninstall_bat = os.path.join(target_dir, "Uninstall.bat")
+        with open(uninstall_bat, "w", newline="\r\n") as f:
+            f.write("@echo off\r\n")
+            f.write('reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\EtchedWorship" /f >nul 2>&1\r\n')
+            f.write('del "%USERPROFILE%\\Desktop\\Etched Worship.lnk" >nul 2>&1\r\n')
+            f.write('cd /d "%TEMP%"\r\n')
+            f.write(f'rd /s /q "{target_dir}"\r\n')
+        return uninstall_bat
+
+    def register_windows_app(self, target_dir, icon_path, uninstall_bat):
+        """Add an entry to Windows' Add/Remove Programs (Installed Apps) list."""
+        try:
+            import winreg
+            key_path = r"Software\Microsoft\Windows\CurrentVersion\Uninstall\EtchedWorship"
+            with winreg.CreateKey(winreg.HKEY_CURRENT_USER, key_path) as key:
+                winreg.SetValueEx(key, "DisplayName", 0, winreg.REG_SZ, "Etched Worship")
+                winreg.SetValueEx(key, "DisplayVersion", 0, winreg.REG_SZ, "1.0.0")
+                winreg.SetValueEx(key, "Publisher", 0, winreg.REG_SZ, "kenkaroki")
+                winreg.SetValueEx(key, "InstallLocation", 0, winreg.REG_SZ, target_dir)
+                winreg.SetValueEx(key, "UninstallString", 0, winreg.REG_SZ, f'"{uninstall_bat}"')
+                if icon_path and os.path.exists(icon_path):
+                    winreg.SetValueEx(key, "DisplayIcon", 0, winreg.REG_SZ, icon_path)
+                winreg.SetValueEx(key, "NoModify", 0, winreg.REG_DWORD, 1)
+                winreg.SetValueEx(key, "NoRepair", 0, winreg.REG_DWORD, 1)
+        except Exception:
+            pass  # Registration is best-effort; don't fail the install over it
 
     def start_installation(self):
         try:
@@ -287,7 +313,7 @@ class ProgressPage(ctk.CTkFrame):
             packagefiles_dir = os.path.join(target_dir, "packagefiles")
             os.makedirs(packagefiles_dir, exist_ok=True)
 
-            open(os.path.join(packagefiles_dir, "stack.ecw.stc"), "w").close()
+            open(os.path.join(packagefiles_dir, "stack_controller.ecw.stc"), "w").close()
             open(os.path.join(packagefiles_dir, "songs.ecw.json"), "w").close()
 
             bg_config = {
@@ -316,6 +342,12 @@ class ProgressPage(ctk.CTkFrame):
                 if os.path.exists(bundled_icon):
                     shutil.copy2(bundled_icon, installed_icon)
                     icon_path = installed_icon
+
+            # Step 7b: Register with Windows "Installed Apps" (Add/Remove Programs)
+            if platform.system() == "Windows":
+                self.update_status("Registering application...", 94)
+                uninstall_bat = self.create_uninstaller(target_dir)
+                self.register_windows_app(target_dir, icon_path, uninstall_bat)
 
             # Step 8: Shortcut Setup
             if self.parent.create_shortcut_var.get():
